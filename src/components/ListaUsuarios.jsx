@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
-import { TrashIcon, PencilIcon } from '@heroicons/react/24/outline'
+import { TrashIcon, PencilIcon, XMarkIcon } from '@heroicons/react/24/outline' // Adicionado XMarkIcon
 import { useUsersCache } from '../hooks/useSupabaseCache'
 import { useAuth } from '../contexts/AuthContext'
 

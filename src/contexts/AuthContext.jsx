@@ -1,8 +1,8 @@
 'use client'
 
-import { createContext, useContext, useEffect, useState  } from 'react'
+import { createContext, useContext, useEffect, useState, useCallback  } from 'react' // Adicionado useCallback
 import { supabase  } from '../lib/supabase'
-import { useCache } from '../hooks/useCache'
+import { useCacheManager } from '../hooks/useCache' // Importado useCacheManager
 import { CACHE_KEYS } from '../hooks/useSupabaseCache'
 
 const AuthContext = createContext(undefined)
@@ -11,7 +11,42 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
-  const { set: setCache, get: getCache, has: hasCache } = useCacheManager()
+  const { set: setCache, get: getCache } = useCacheManager() // Desestruturado getCache
+
+  const loadUserProfile = useCallback(async (email) => { // Envolvido em useCallback
+    try {
+      // Verificar se as variáveis de ambiente estão configuradas
+      if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+        console.error('Variáveis de ambiente do Supabase não configuradas')
+        return
+      }
+
+      // Tentar carregar do cache primeiro
+      const cachedProfile = getCache(`${CACHE_KEYS.USERS}-${email}`);
+      if (cachedProfile) {
+        setProfile(cachedProfile);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('email', email)
+        .single()
+
+      if (error) {
+        console.error('Erro ao carregar perfil do usuário:', error)
+        return
+      }
+
+      if (data) {
+        setProfile(data)
+        setCache(`${CACHE_KEYS.USERS}-${email}`, data); // Cache the profile
+      }
+    } catch (error) {
+      console.error('Erro ao carregar perfil do usuário:', error)
+    }
+  }, [getCache, setCache]); // Adicionado getCache e setCache como dependências
 
   useEffect(() => {
     const getSession = async () => {
@@ -41,45 +76,7 @@ export function AuthProvider({ children }) {
     )
 
     return () => subscription.unsubscribe()
-  }, [])
-
-  const loadUserProfile = async (email) => {
-    try {
-      // Verificar se as variáveis de ambiente estão configuradas
-      if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-        console.error('Variáveis de ambiente do Supabase não configuradas')
-        return
-      }
-
-      // Tentar carregar do cache primeiro
-      const cachedProfile = getCache(`${CACHE_KEYS.USERS}-${email}`);
-      if (cachedProfile) {
-        setProfile(cachedProfile);
-        return;
-      }
-
-      const { data, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('email', email)
-        .single()
-
-      if (error) {
-        console.error('Erro ao carregar perfil do usuário:', error)
-        // Se o usuário não existe na tabela users, o trigger handle_new_user deveria ter criado.
-        // Se ainda assim não existir, pode ser um problema de configuração do trigger ou RLS.
-        // Não vamos tentar criar aqui no cliente para evitar redundância com o trigger.
-        return
-      }
-
-      if (data) {
-        setProfile(data)
-        setCache(`${CACHE_KEYS.USERS}-${email}`, data); // Cache the profile
-      }
-    } catch (error) {
-      console.error('Erro ao carregar perfil do usuário:', error)
-    }
-  }
+  }, [loadUserProfile, setCache]); // Adicionado loadUserProfile e setCache como dependências
 
   const signIn = async (email, password) => {
     try {
