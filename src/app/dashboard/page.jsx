@@ -1,6 +1,7 @@
 'use client'
 
 import DashboardLayout from '../../components/DashboardLayout'
+import { ProtectedRoute } from '../../components/ProtectedRoute'
 import { useData } from '../../contexts/DataContext'
 import { useMemo } from 'react'
 
@@ -12,7 +13,8 @@ export default function DashboardPage() {
   const totalClientes = useMemo(() => clientes.length, [clientes])
 
   return (
-    <DashboardLayout>
+    <ProtectedRoute>
+      <DashboardLayout>
       {/* Header */}
       <header className="bg-white shadow">
         <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
@@ -96,6 +98,7 @@ export default function DashboardPage() {
           </div>
         </div>
       </main>
-    </DashboardLayout>
+      </DashboardLayout>
+    </ProtectedRoute>
   )
 }

@@ -3,7 +3,6 @@
 import { createContext, useContext, useEffect, useState, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from './AuthContext'
-import { useRealtimeUpdates } from '../hooks/useRealtimeUpdates'
 
 const DataContext = createContext(undefined)
 
@@ -18,9 +17,6 @@ export function DataProvider({ children }) {
     lastUpdated: null
   })
   const [cacheVersion, setCacheVersion] = useState(0)
-
-  // Configurar atualizações em tempo real
-  useRealtimeUpdates()
 
   // Função para carregar todos os dados
   const loadAllData = useCallback(async () => {
@@ -172,6 +168,48 @@ export function DataProvider({ children }) {
       loadAllData()
     }
   }, [cacheVersion, loadAllData])
+
+  // Configurar atualizações em tempo real
+  useEffect(() => {
+    if (!user) return
+
+    // Configurar listeners para mudanças em tempo real
+    const vagasSubscription = supabase
+      .channel('vagas_changes')
+      .on('postgres_changes', 
+        { 
+          event: '*', 
+          schema: 'public', 
+          table: 'vagas' 
+        }, 
+        (payload) => {
+          console.log('Mudança detectada na tabela vagas:', payload)
+          invalidateCache()
+        }
+      )
+      .subscribe()
+
+    const usersSubscription = supabase
+      .channel('users_changes')
+      .on('postgres_changes', 
+        { 
+          event: '*', 
+          schema: 'public', 
+          table: 'users' 
+        }, 
+        (payload) => {
+          console.log('Mudança detectada na tabela users:', payload)
+          invalidateCache()
+        }
+      )
+      .subscribe()
+
+    // Cleanup das subscriptions
+    return () => {
+      vagasSubscription.unsubscribe()
+      usersSubscription.unsubscribe()
+    }
+  }, [user, invalidateCache])
 
   const value = {
     // Dados
