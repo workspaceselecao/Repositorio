@@ -5,13 +5,15 @@ import DashboardLayout from '../../components/DashboardLayout'
 import NovoUsuarioForm from '../../components/NovoUsuarioForm'
 import ListaUsuarios from '../../components/ListaUsuarios'
 import ExportExcel from '../../components/ExportExcel' // Importar ExportExcel
-import { PlusIcon, UserGroupIcon, ArrowDownTrayIcon, Cog6ToothIcon  } from '@heroicons/react/24/outline'
+import { PlusIcon, UserGroupIcon, ArrowDownTrayIcon, Cog6ToothIcon, ArchiveBoxXMarkIcon  } from '@heroicons/react/24/outline' // Adicionado ArchiveBoxXMarkIcon
 import { useVagasCache } from '../../hooks/useSupabaseCache' // Para exportar todas as vagas
+import { useCacheManager } from '../../hooks/useCache' // Importar useCacheManager
 
 export default function ConfiguracoesPage() {
   const [activeTab, setActiveTab] = useState<'usuarios' | 'backup' | 'sistema'>('usuarios')
   const [showNewUserForm, setShowNewUserForm] = useState(false)
   const { data: allVagas = [] } = useVagasCache() // Carregar todas as vagas para backup
+  const { clear: clearAppCache } = useCacheManager() // Obter a função clear do cache manager
 
   const handleUserCreated = () => {
     setShowNewUserForm(false)
@@ -20,10 +22,10 @@ export default function ConfiguracoesPage() {
     window.location.reload() 
   }
 
-  // A função handleBackup agora será substituída pelo componente ExportExcel
-  // const handleBackup = () => {
-  //   alert('Funcionalidade de backup em desenvolvimento')
-  // }
+  const handleClearCache = () => {
+    clearAppCache()
+    alert('Cache da aplicação limpo com sucesso!')
+  }
 
   // Preparar dados para exportação de todas as vagas
   const vagasParaExport = allVagas.map(vaga => ({
@@ -161,6 +163,23 @@ export default function ConfiguracoesPage() {
                   />
                 </div>
 
+                {/* Gerenciamento de Cache */}
+                <div className="bg-white shadow rounded-lg p-6">
+                  <h3 className="text-lg font-medium text-gray-900 mb-4">
+                    🧹 Gerenciamento de Cache
+                  </h3>
+                  <p className="text-gray-500 mb-4">
+                    Limpa o cache de dados da aplicação para garantir que as informações mais recentes sejam carregadas.
+                  </p>
+                  <button
+                    onClick={handleClearCache}
+                    className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-md text-sm font-medium flex items-center"
+                  >
+                    <ArchiveBoxXMarkIcon className="h-4 w-4 mr-2" />
+                    Limpar Cache da Aplicação
+                  </button>
+                </div>
+
                 {/* Estatísticas do Sistema */}
                 <div className="bg-white shadow rounded-lg p-6">
                   <h3 className="text-lg font-medium text-gray-900 mb-4">
@@ -188,21 +207,6 @@ export default function ConfiguracoesPage() {
                     <p>• Configurações de email: Em desenvolvimento</p>
                     <p>• Parâmetros do sistema: Em desenvolvimento</p>
                     <p>• Logs de atividade: Em desenvolvimento</p>
-                  </div>
-                </div>
-
-                {/* Logs do Sistema */}
-                <div className="bg-white shadow rounded-lg p-6">
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">
-                    📋 Logs do Sistema
-                  </h3>
-                  <p className="text-gray-500 mb-4">
-                    Visualizar logs e atividades do sistema.
-                  </p>
-                  <div className="space-y-2 text-sm text-gray-600">
-                    <p>• Logs de autenticação: Em desenvolvimento</p>
-                    <p>• Logs de operações: Em desenvolvimento</p>
-                    <p>• Logs de erro: Em desenvolvimento</p>
                   </div>
                 </div>
               </div>
