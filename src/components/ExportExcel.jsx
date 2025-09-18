@@ -1,17 +1,13 @@
 'use client'
 
-import { useState  } from 'react'
+import { useState } from 'react'
 import * as XLSX from 'xlsx'
-
-
-
-
 
 export default function ExportExcel({ 
   vagas, 
   filename = 'vagas-exportadas',
   buttonText = 'Exportar Excel',
-  className = 'btn-primary'
+  className = 'bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium'
 }) {
   const [loading, setLoading] = useState(false)
 
@@ -48,26 +44,15 @@ export default function ExportExcel({
       const ws = XLSX.utils.json_to_sheet(dadosExport)
       const wb = XLSX.utils.book_new()
       
-      // Ajustar largura das colunas
-      const colWidths = [
-        { wch}, // ID
-        { wch}, // Cliente
-        { wch}, // Site
-        { wch}, // Categoria
-        { wch}, // Cargo
-        { wch}, // Produto
-        { wch}, // Descrição
-        { wch}, // Requisitos
-        { wch}, // Benefícios
-        { wch}, // Salário
-        { wch}, // Localização
-        { wch}, // Regime
-        { wch}, // Horário
-        { wch}, // Contrato
-        { wch}, // Observações
-        { wch}  // Data Criação
-      ]
-      ws['!cols'] = colWidths
+      // Ajustar largura das colunas dinamicamente
+      const header = Object.keys(dadosExport[0]);
+      const colWidths = header.map(key => ({
+        wch: Math.max(
+          key.length, // Largura mínima baseada no cabeçalho
+          ...dadosExport.map(item => (item[key] ? String(item[key]).length : 0))
+        ) + 2 // Adicionar um pequeno padding
+      }));
+      ws['!cols'] = colWidths;
 
       // Adicionar worksheet ao workbook
       XLSX.utils.book_append_sheet(wb, ws, 'Vagas')

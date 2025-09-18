@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState  } from 'react'
+import { useEffect, useState } from 'react'
 
 export function EnvironmentCheck({ children }) {
   const [isConfigured, setIsConfigured] = useState(true)
@@ -18,7 +18,8 @@ export function EnvironmentCheck({ children }) {
       const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
       if (!supabaseUrl || !supabaseKey ||
-          supabaseUrl === 'https://your-project.supabase.co') {
+          supabaseUrl === 'https://your-project.supabase.co' ||
+          supabaseKey === 'placeholder-key') { // Adicionado verificação para a chave placeholder
         setIsConfigured(false)
       }
       setIsLoading(false)
@@ -50,20 +51,23 @@ export function EnvironmentCheck({ children }) {
           <p className="text-gray-600 text-center mb-6">
             As variáveis de ambiente do Supabase não estão configuradas corretamente.
           </p>
-          
+
           <div className="bg-gray-100 rounded-lg p-4 mb-6">
             <h3 className="font-semibold text-gray-800 mb-2">Para corrigir, crie um arquivo `.env.local` na raiz do projeto com:</h3>
             <pre className="text-sm text-gray-700 bg-white p-3 rounded border overflow-x-auto">
 {`NEXT_PUBLIC_SUPABASE_URL=https://qdzrldxubcofobqmynab.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFkenJsZHh1YmNvZm9icW15bmFiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc3MzkyMjcsImV4cCI6MjA3MzMxNTIyN30.OGrgDawwnY9BXjwYpT36r1ESBHLHE2gf6FWZIYBsm3w
-NEXT_PUBLIC_APP_URL=http://localhost=development`}
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFkenJsZHh1YmNvZm9icW15bmabIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc3MzkyMjcsImV4cCI6MjA3MzMxNTIyN30.OGrgDawwnY9BXjwYpT36r1ESBHLHE2gf6FWZIYBsm3w
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+NODE_ENV=development`}
             </pre>
           </div>
 
           <div className="bg-blue-50 rounded-lg p-4 mb-6">
             <h3 className="font-semibold text-blue-800 mb-2">Passos para resolver:</h3>
             <ol className="list-decimal list-inside space-y-1 text-blue-700">
-              <li>Recarregue esta página</li>
+              <li>Crie ou atualize o arquivo `.env.local` com suas credenciais Supabase reais.</li>
+              <li>Reinicie o servidor de desenvolvimento (`npm run dev`).</li>
+              <li>Recarregue esta página.</li>
             </ol>
           </div>
 

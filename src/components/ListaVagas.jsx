@@ -1,19 +1,20 @@
 'use client'
 
-import { useState, useEffect, useCallback, useMemo, memo  } from 'react'
-import { supabase  } from '../lib/supabase'
+import { useState, useEffect, useCallback, useMemo, memo } from 'react'
+import { supabase } from '../lib/supabase'
 import EditarVagaModal from './EditarVagaModal'
 import Pagination from './Pagination'
 import VirtualizedVagasList from './VirtualizedVagasList'
 import PerformanceDashboard from './PerformanceDashboard'
 import VagaCardExpansivel from './VagaCardExpansivel'
-import { Vaga  } from '../types'
-import { useDebounce  } from '../hooks/useDebounce'
-import { usePagination  } from '../hooks/usePagination'
-import { useVagasCache, useClientesCache, useSitesCache  } from '../hooks/useSupabaseCache'
-import { useAPIPerformance, useUserPerformance, useMemoryMonitor  } from '../hooks/usePerformanceMetrics'
-import { PencilIcon, 
-  TrashIcon, 
+// import { Vaga } from '../types' // Removido, pois o projeto é JS e não usa tipagem aqui
+import { useDebounce } from '../hooks/useDebounce'
+import { usePagination } from '../hooks/usePagination'
+import { useVagasCache, useClientesCache, useSitesCache } from '../hooks/useSupabaseCache'
+import { useAPIPerformance, useUserPerformance, useMemoryMonitor } from '../hooks/usePerformanceMetrics'
+import {
+  PencilIcon,
+  TrashIcon,
   BuildingOfficeIcon,
   MapPinIcon,
   CurrencyDollarIcon,
@@ -21,10 +22,8 @@ import { PencilIcon,
   UserGroupIcon,
   ArrowDownTrayIcon,
   ChartBarIcon
- } from '@heroicons/react/24/outline'
+} from '@heroicons/react/24/outline'
 import * as XLSX from 'xlsx'
-
-
 
 const VagaCard = memo(function VagaCard({ vaga, onEdit, onDelete, onExport }) {
   const [expanded, setExpanded] = useState(false)
@@ -171,26 +170,29 @@ export default function ListaVagas({ onVagasChange }) {
   const [editingVaga, setEditingVaga] = useState(null)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [itemsPerPage, setItemsPerPage] = useState(6)
-  const [viewMode, setViewMode] = useState<'paginated' | 'virtualized' | 'expanded'>('expanded')
+  const [viewMode, setViewMode] = useState('expanded') // Default para 'expanded'
   const [showPerformanceDashboard, setShowPerformanceDashboard] = useState(false)
 
   // Debounce para busca
   const debouncedSearchTerm = useDebounce(searchTerm, 300)
 
   // Usar cache para dados
-  const { 
-    data: vagas = [], 
-    loading: vagasLoading, 
-    error: vagasError, 
-    refetch} = useVagasCache()
+  const {
+    data: vagas = [],
+    loading: vagasLoading,
+    error: vagasError,
+    refetch
+  } = useVagasCache()
 
-  const { 
-    data: clientes = [], 
-    loading: clientesLoading} = useClientesCache()
+  const {
+    data: clientes = [],
+    loading: clientesLoading
+  } = useClientesCache()
 
-  const { 
-    data: sites = [], 
-    loading: sitesLoading} = useSitesCache()
+  const {
+    data: sites = [],
+    loading: sitesLoading
+  } = useSitesCache()
 
   // Extrair nomes dos clientes e sites para filtros
   const clientesNomes = useMemo(() => clientes?.map(c => c.nome) || [], [clientes])
@@ -208,12 +210,28 @@ export default function ListaVagas({ onVagasChange }) {
     setIsEditModalOpen(true)
   }, [])
 
-  const handleSaveEdit = useCallback((updatedVaga) => {
-    // Atualizar cache local e refetch para sincronizar
-    refetch()
-    setEditingVaga(null)
-    setIsEditModalOpen(false)
-  }, [refetch])
+  const handleSaveEdit = useCallback(async (updatedVaga) => {
+    try {
+      await measureAPICall(async () => {
+        const { error } = await supabase
+          .from('vagas')
+          .update(updatedVaga)
+          .eq('id', updatedVaga.id);
+
+        if (error) {
+          throw error;
+        }
+      }, 'updateVaga');
+
+      // Refetch para atualizar cache
+      refetch();
+      setEditingVaga(null);
+      setIsEditModalOpen(false);
+    } catch (err) {
+      console.error('Erro ao salvar edição da vaga:', err);
+      alert('Erro ao salvar edição da vaga.');
+    }
+  }, [refetch, measureAPICall]);
 
   const handleCloseEdit = useCallback(() => {
     setEditingVaga(null)
@@ -244,26 +262,16 @@ export default function ListaVagas({ onVagasChange }) {
       // Criar workbook
       const ws = XLSX.utils.json_to_sheet(dadosExport)
       const wb = XLSX.utils.book_new()
-      
-      // Ajustar largura das colunas
-      const colWidths = [
-        { wch}, // ID
-        { wch}, // Cliente
-        { wch}, // Site
-        { wch}, // Categoria
-        { wch}, // Cargo
-        { wch}, // Produto
-        { wch}, // Descrição
-        { wch}, // Requisitos
-        { wch}, // Benefícios
-        { wch}, // Salário
-        { wch}, // Localização
-        { wch}, // Horário
-        { wch}, // Jornada
-        { wch}, // Observações
-        { wch}  // Data Criação
-      ]
-      ws['!cols'] = colWidths
+
+      // Ajustar largura das colunas dinamicamente
+      const header = Object.keys(dadosExport[0]);
+      const colWidths = header.map(key => ({
+        wch: Math.max(
+          key.length, // Largura mínima baseada no cabeçalho
+          ...dadosExport.map(item => (item[key] ? String(item[key]).length : 0))
+        ) + 2 // Adicionar um pequeno padding
+      }));
+      ws['!cols'] = colWidths;
 
       // Adicionar worksheet ao workbook
       XLSX.utils.book_append_sheet(wb, ws, 'Vaga')
@@ -271,7 +279,7 @@ export default function ListaVagas({ onVagasChange }) {
       // Download do arquivo
       const dataAtual = new Date().toISOString().split('T')[0]
       const nomeArquivo = `vaga-${vaga.cliente}-${vaga.cargo}-${dataAtual}.xlsx`
-      
+
       XLSX.writeFile(wb, nomeArquivo)
 
     } catch (error) {
@@ -305,7 +313,7 @@ export default function ListaVagas({ onVagasChange }) {
   // Filtrar vagas com memoização
   const vagasFiltradas = useMemo(() => {
     return (vagas || []).filter(vaga => {
-      const matchSearch = debouncedSearchTerm === '' || 
+      const matchSearch = debouncedSearchTerm === '' ||
         vaga.cargo.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
         vaga.cliente.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
         vaga.produto.toLowerCase().includes(debouncedSearchTerm.toLowerCase())
@@ -362,7 +370,7 @@ export default function ListaVagas({ onVagasChange }) {
 
   if (error) {
     const isConfigError = error.includes('placeholder') || error.includes('404') || error.includes('Failed to load resource')
-    
+
     return (
       <div className="text-center py-12">
         <div className="max-w-md mx-auto">
@@ -371,7 +379,7 @@ export default function ListaVagas({ onVagasChange }) {
               Erro ao carregar vagas
             </h3>
             <p className="text-red-600 mb-4">
-              {isConfigError 
+              {isConfigError
                 ? 'As variáveis de ambiente do Supabase não estão configuradas. Verifique a configuração do Vercel.'
                 : error
               }
@@ -415,7 +423,7 @@ export default function ListaVagas({ onVagasChange }) {
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
-          
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Cliente
@@ -432,7 +440,7 @@ export default function ListaVagas({ onVagasChange }) {
               ))}
             </select>
           </div>
-          
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Site
@@ -450,7 +458,7 @@ export default function ListaVagas({ onVagasChange }) {
             </select>
           </div>
         </div>
-        
+
         {(searchTerm || filterCliente || filterSite) && (
           <div className="mt-4">
             <button
@@ -477,7 +485,7 @@ export default function ListaVagas({ onVagasChange }) {
               <span className="text-blue-600"> (filtradas de {vagas?.length || 0} total)</span>
             )}
           </p>
-          
+
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
               <label className="text-sm text-blue-700">Visualização:</label>
@@ -499,7 +507,7 @@ export default function ListaVagas({ onVagasChange }) {
               <ChartBarIcon className="h-4 w-4" />
               Performance
             </button>
-            
+
             {(viewMode === 'paginated' || viewMode === 'expanded') && (
               <div className="flex items-center gap-2">
                 <label className="text-sm text-blue-700">Itens por página:</label>
@@ -551,7 +559,7 @@ export default function ListaVagas({ onVagasChange }) {
               />
             ))}
           </div>
-          
+
           {/* Componente de paginação */}
           <Pagination
             currentPage={pagination.currentPage}
@@ -570,7 +578,7 @@ export default function ListaVagas({ onVagasChange }) {
       ) : (
         <>
           <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-            {pagination.currentPageData.map(vaga => (
+            {pagination.paginatedData.map(vaga => ( {/* Corrigido de currentPageData para paginatedData */}
               <VagaCard
                 key={vaga.id}
                 vaga={vaga}
@@ -580,7 +588,7 @@ export default function ListaVagas({ onVagasChange }) {
               />
             ))}
           </div>
-          
+
           {/* Componente de paginação */}
           <Pagination
             currentPage={pagination.currentPage}

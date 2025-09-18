@@ -1,5 +1,6 @@
 // Tipos e interfaces para a aplicação
 
+// Apenas para documentação, não para tipagem em tempo de compilação em JS
 export const Vaga = {
   id: '',
   cargo: '',
