@@ -42,6 +42,8 @@ export function AuthProvider({ children }) {
       setCache(`${CACHE_KEYS.USERS}-${userAuth.email}`, newProfile)
       
       // Tentar inserir na tabela users em background (sem bloquear o login)
+      // Comentado temporariamente devido a problemas de RLS
+      /*
       try {
         const { data, error } = await supabase
           .from('users')
@@ -57,6 +59,7 @@ export function AuthProvider({ children }) {
       } catch (dbError) {
         console.log('Aviso: Erro ao inserir na tabela users:', dbError.message)
       }
+      */
       
     } catch (error) {
       console.error('Erro ao carregar perfil do usuário:', error)
