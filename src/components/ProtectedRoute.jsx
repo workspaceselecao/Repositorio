@@ -2,40 +2,17 @@
 
 import { useAuth } from '../contexts/AuthContext'
 import { useRouter } from 'next/navigation'
-import { useEffect, useRef } from 'react'
+import { useEffect } from 'react'
 
-export function ProtectedRoute({ 
-  children, 
-  requiredRole, 
-  redirectTo = '/login' 
-}) {
-  const { user, profile, loading } = useAuth()
+export function ProtectedRoute({ children }) {
+  const { user, loading } = useAuth()
   const router = useRouter()
-  const hasRedirected = useRef(false)
 
   useEffect(() => {
-    // Evitar múltiplos redirecionamentos
-    if (hasRedirected.current) return
-
-    if (!loading) {
-      if (!user) {
-        hasRedirected.current = true
-        router.push(redirectTo)
-        return
-      }
-
-      if (requiredRole && profile?.role !== requiredRole) {
-        hasRedirected.current = true
-        router.push('/dashboard')
-        return
-      }
+    if (!loading && !user) {
+      router.push('/login')
     }
-  }, [user, profile, loading, requiredRole, redirectTo, router])
-
-  // Reset do flag quando o usuário muda
-  useEffect(() => {
-    hasRedirected.current = false
-  }, [user])
+  }, [user, loading, router])
 
   if (loading) {
     return (
@@ -49,35 +26,18 @@ export function ProtectedRoute({
     return null
   }
 
-  if (requiredRole && profile?.role !== requiredRole) {
-    return null
-  }
-
   return <>{children}</>
 }
 
-export function PublicRoute({ 
-  children, 
-  redirectTo = '/dashboard' 
-}) {
+export function PublicRoute({ children }) {
   const { user, loading } = useAuth()
   const router = useRouter()
-  const hasRedirected = useRef(false)
 
   useEffect(() => {
-    // Evitar múltiplos redirecionamentos
-    if (hasRedirected.current) return
-
     if (!loading && user) {
-      hasRedirected.current = true
-      router.push(redirectTo)
+      router.push('/dashboard')
     }
-  }, [user, loading, redirectTo, router])
-
-  // Reset do flag quando o usuário muda
-  useEffect(() => {
-    hasRedirected.current = false
-  }, [user])
+  }, [user, loading, router])
 
   if (loading) {
     return (
