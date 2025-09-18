@@ -19,7 +19,7 @@ export function EnvironmentCheck({ children }) {
 
       if (!supabaseUrl || !supabaseKey ||
           supabaseUrl === 'https://your-project.supabase.co' ||
-          supabaseKey === 'placeholder-key') { // Adicionado verificação para a chave placeholder
+          supabaseKey === 'your-anon-key-here') { // Adicionado verificação para a chave placeholder
         setIsConfigured(false)
       }
       setIsLoading(false)
@@ -56,7 +56,7 @@ export function EnvironmentCheck({ children }) {
             <h3 className="font-semibold text-gray-800 mb-2">Para corrigir, crie um arquivo `.env.local` na raiz do projeto com:</h3>
             <pre className="text-sm text-gray-700 bg-white p-3 rounded border overflow-x-auto">
 {`NEXT_PUBLIC_SUPABASE_URL=https://qdzrldxubcofobqmynab.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFkenJsZHh1YmNvZm9icW15bmabIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc3MzkyMjcsImV4cCI6MjA3MzMxNTIyN30.OGrgDawwnY9BXjwYpT36r1ESBHLHE2gf6FWZIYBsm3w
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFkenJsZHh1YmNvZm9icW15bmFiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc3MzkyMjcsImV4cCI6MjA3MzMxNTIyN30.OGrgDawwnY9BXjwYpT36r1ESBHLHE2gf6FWZIYBsm3w
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 NODE_ENV=development`}
             </pre>
