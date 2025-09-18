@@ -1,53 +1,62 @@
-# Configuração de Variáveis de Ambiente no Vercel
+# 🔧 Configuração de Variáveis de Ambiente no Vercel
 
-## ⚠️ IMPORTANTE: Configurar Variáveis de Ambiente
+## ⚠️ PROBLEMA ATUAL: "Invalid API key" e Erro 401
 
-A aplicação precisa das seguintes variáveis de ambiente configuradas no Vercel:
+A aplicação está falhando porque as variáveis de ambiente não estão configuradas no Vercel.
+
+## 🚀 SOLUÇÃO RÁPIDA
 
 ### 1. Acesse o Dashboard do Vercel
 - Vá para: https://vercel.com/dashboard
 - Selecione o projeto "repositoriovagas"
 
 ### 2. Configure as Variáveis de Ambiente
-- Vá para: Settings > Environment Variables
+- Vá para: **Settings** → **Environment Variables**
 - Adicione as seguintes variáveis:
 
 ```
-NEXT_PUBLIC_SUPABASE_URL=https://your-project-id.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key-here
+NEXT_PUBLIC_SUPABASE_URL = https://qdzrldxubcofobqmynab.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFkenJsZHh1YmNvZm9icW15bmFiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc3MzkyMjcsImV4cCI6MjA3MzMxNTIyN30.OGrgDawwnY9BXjwYpT36r1ESBHLHE2gf6FWZIYBsm3w
+NEXT_PUBLIC_APP_URL = https://repositoriodevagas.vercel.app
+NODE_ENV = production
 ```
 
-### 3. Obtenha as Credenciais do Supabase
-- Acesse: https://supabase.com/dashboard
-- Selecione seu projeto
-- Vá para: Settings > API
-- Copie:
-  - **Project URL** → `NEXT_PUBLIC_SUPABASE_URL`
-  - **anon public** key → `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+### 3. Configuração por Ambiente
+- **Production**: ✅ Marque para produção
+- **Preview**: ✅ Marque para preview
+- **Development**: ✅ Marque para desenvolvimento
 
 ### 4. Redeploy da Aplicação
 Após configurar as variáveis:
-- Vá para: Deployments
-- Clique em "Redeploy" no último deployment
+- Vá para: **Deployments**
+- Clique em **"Redeploy"** no último deployment
+- Aguarde o deploy completar
 
-## 🔧 Configuração Local (Desenvolvimento)
+## 🔍 Verificação
 
-Crie um arquivo `.env.local` na raiz do projeto:
+Após o redeploy, acesse:
+- https://repositoriodevagas.vercel.app
+- O erro "Invalid API key" deve desaparecer
+- O login deve funcionar normalmente
 
+## 🛠️ Configuração Local (Desenvolvimento)
+
+O arquivo `.env.local` já está configurado localmente:
 ```env
-NEXT_PUBLIC_SUPABASE_URL=https://your-project-id.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key-here
+NEXT_PUBLIC_SUPABASE_URL=https://qdzrldxubcofobqmynab.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFkenJsZHh1YmNvZm9icW15bmFiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc3MzkyMjcsImV4cCI6MjA3MzMxNTIyN30.OGrgDawwnY9BXjwYpT36r1ESBHLHE2gf6FWZIYBsm3w
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+NODE_ENV=development
 ```
 
-## 🚨 Erro Atual
+## 🚨 Erro Atual Explicado
 
-A aplicação está mostrando "Erro ao carregar vagas" porque:
-1. As variáveis de ambiente não estão configuradas no Vercel
-2. O Supabase não consegue se conectar
-3. As consultas falham com 404
+1. **"Invalid API key"**: Supabase não consegue se conectar
+2. **Erro 401**: Falta de autenticação devido à chave inválida
+3. **Console 401**: Requisições falhando por falta de credenciais
 
-## ✅ Solução
+## ✅ Após Configurar
 
-1. Configure as variáveis de ambiente no Vercel
-2. Faça redeploy da aplicação
-3. A aplicação funcionará normalmente
+- ✅ Login funcionará
+- ✅ Dados carregarão normalmente
+- ✅ Sistema estará operacional

@@ -2,6 +2,7 @@ import './globals.css'
 import { AuthProvider  } from '../contexts/AuthContext'
 import { ErrorBoundary  } from '../components/ErrorBoundary'
 import { EnvironmentCheck  } from '../components/EnvironmentCheck'
+import { EnvironmentDebug  } from '../components/EnvironmentDebug'
 
 export const metadata = {
   title: 'Repositório de Vagas',
@@ -33,6 +34,7 @@ export default function RootLayout({
           <EnvironmentCheck>
             <AuthProvider>
               {children}
+              <EnvironmentDebug />
             </AuthProvider>
           </EnvironmentCheck>
         </ErrorBoundary>
