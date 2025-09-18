@@ -12,13 +12,19 @@ export default function ExportUsers({ className = '' }) {
     
     try {
       // Preparar dados para exportação
-      const usersData = users.map(user => ({
-        'Nome': user.name,
-        'Email': user.email,
-        'Função': user.role,
-        'Data de Criação': new Date(user.created_at).toLocaleDateString('pt-BR'),
-        'Última Atualização': new Date(user.updated_at).toLocaleDateString('pt-BR')
+      const usersData = (users || []).map(user => ({
+        'Nome': user.name || '',
+        'Email': user.email || '',
+        'Função': user.role || '',
+        'Data de Criação': user.created_at ? new Date(user.created_at).toLocaleDateString('pt-BR') : '',
+        'Última Atualização': user.updated_at ? new Date(user.updated_at).toLocaleDateString('pt-BR') : ''
       }))
+
+      // Verificar se há dados para exportar
+      if (usersData.length === 0) {
+        alert('Nenhum usuário encontrado para exportar.')
+        return
+      }
 
       // Criar workbook
       const XLSX = (await import('xlsx')).default

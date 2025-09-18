@@ -14,8 +14,13 @@ import { useCacheManager } from '../../hooks/useCache' // Importar useCacheManag
 export default function ConfiguracoesPage() {
   const [activeTab, setActiveTab] = useState('usuarios')
   const [showNewUserForm, setShowNewUserForm] = useState(false)
-  const { data: allVagas = [] } = useVagasCache() // Carregar todas as vagas para backup
+  const { data: allVagas = [], loading: vagasLoading, error: vagasError } = useVagasCache() // Carregar todas as vagas para backup
   const { clear: clearAppCache } = useCacheManager() // Obter a função clear do cache manager
+
+  // Se houver erro ao carregar vagas, mostrar mensagem
+  if (vagasError) {
+    console.error('Erro ao carregar vagas:', vagasError)
+  }
 
   const handleUserCreated = () => {
     setShowNewUserForm(false)
@@ -30,7 +35,7 @@ export default function ConfiguracoesPage() {
   }
 
   // Preparar dados para exportação de todas as vagas
-  const vagasParaExport = allVagas.map(vaga => ({
+  const vagasParaExport = (allVagas || []).map(vaga => ({
     id: vaga.id,
     cliente: vaga.cliente,
     site: vaga.site,
@@ -48,6 +53,20 @@ export default function ConfiguracoesPage() {
     etapas: vaga.etapas_processo || '',
     created_at: vaga.created_at
   }));
+
+  // Se estiver carregando, mostrar loading
+  if (vagasLoading) {
+    return (
+      <DashboardLayout requiredRole="ADMIN">
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500 mx-auto"></div>
+            <p className="mt-4 text-gray-600">Carregando configurações...</p>
+          </div>
+        </div>
+      </DashboardLayout>
+    )
+  }
 
   return (
     <DashboardLayout requiredRole="ADMIN">

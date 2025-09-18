@@ -24,7 +24,7 @@ export default function SystemInfo() {
       setSystemInfo(prev => ({
         ...prev,
         uptime: `${hours}h ${minutes}m`,
-        memory: `${Math.round(performance.memory?.usedJSHeapSize / 1024 / 1024 || 0)}MB`
+        memory: `${Math.round((performance.memory?.usedJSHeapSize || 0) / 1024 / 1024)}MB`
       }))
     }
 
