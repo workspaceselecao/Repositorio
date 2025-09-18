@@ -1,8 +1,8 @@
 'use client'
 
-import { createContext, useContext, useEffect, useState, useCallback  } from 'react' // Adicionado useCallback
-import { supabase  } from '../lib/supabase'
-import { useCacheManager } from '../hooks/useCache' // Importado useCacheManager
+import { createContext, useContext, useEffect, useState, useCallback } from 'react'
+import { supabase } from '../lib/supabase'
+import { useCacheManager } from '../hooks/useCache'
 import { CACHE_KEYS } from '../hooks/useSupabaseCache'
 
 const AuthContext = createContext(undefined)
@@ -11,18 +11,16 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
-  const { set: setCache, get: getCache } = useCacheManager() // Desestruturado getCache
+  const { set: setCache, get: getCache } = useCacheManager()
 
-  const loadUserProfile = useCallback(async (userAuth) => { // Envolvido em useCallback, renomeado para userAuth
+  const loadUserProfile = useCallback(async (userAuth) => {
     try {
-      // Verificar se as variáveis de ambiente estão configuradas
       if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
         console.error('Variáveis de ambiente do Supabase não configuradas')
         return
       }
 
-      // Tentar carregar do cache primeiro
-      const cachedProfile = getCache(`${CACHE_KEYS.USERS}-${userAuth.id}`); // Usar userAuth.id para a chave do cache
+      const cachedProfile = getCache(`${CACHE_KEYS.USERS}-${userAuth.id}`);
       if (cachedProfile) {
         setProfile(cachedProfile);
         return;
@@ -31,7 +29,7 @@ export function AuthProvider({ children }) {
       const { data, error } = await supabase
         .from('users')
         .select('*')
-        .eq('id', userAuth.id) // Buscar pelo ID do usuário autenticado
+        .eq('id', userAuth.id)
         .single()
 
       if (error) {
@@ -41,95 +39,115 @@ export function AuthProvider({ children }) {
 
       if (data) {
         setProfile(data)
-        setCache(`${CACHE_KEYS.USERS}-${userAuth.id}`, data); // Cache o perfil
+        setCache(`${CACHE_KEYS.USERS}-${userAuth.id}`, data);
       }
     } catch (error) {
       console.error('Erro ao carregar perfil do usuário:', error)
     }
-  }, [getCache, setCache]); // Adicionado getCache e setCache como dependências
+  }, [getCache, setCache]);
 
   useEffect(() => {
-    const getSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (session?.user) {
-        setUser(session.user)
-        await loadUserProfile(session.user) // Passar o objeto user completo
+    const getInitialSession = async () => {
+      setLoading(true); // Garante que loading seja true no início
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError) {
+        console.error("Erro ao obter sessão inicial:", sessionError);
       }
-      setLoading(false)
-    }
+      if (session?.user) {
+        setUser(session.user);
+        await loadUserProfile(session.user);
+      } else {
+        setUser(null);
+        setProfile(null);
+      }
+      setLoading(false); // Garante que loading seja false após a verificação inicial
+    };
 
-    getSession()
+    getInitialSession();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log('Evento de mudança de estado de autenticação:', event, 'Sessão:', session);
         if (session?.user) {
-          setUser(session.user)
-          await loadUserProfile(session.user) // Passar o objeto user completo
+          setUser(session.user);
+          await loadUserProfile(session.user);
         } else {
-          setUser(null)
-          setProfile(null)
-          // Clear user-related cache on sign out
-          setCache(CACHE_KEYS.USERS, null, 0); // Invalidate user cache
+          setUser(null);
+          setProfile(null);
+          setCache(CACHE_KEYS.USERS, null, 0); // Invalida o cache do usuário ao deslogar
         }
-        setLoading(false)
+        setLoading(false); // Garante que loading seja false após qualquer mudança de estado
       }
-    )
+    );
 
-    return () => subscription.unsubscribe()
-  }, [loadUserProfile, setCache]); // Adicionado loadUserProfile e setCache como dependências
+    return () => subscription.unsubscribe();
+  }, [loadUserProfile, setCache]);
 
   const signIn = async (email, password) => {
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      setLoading(true); // Define loading como true durante a tentativa de login
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
-      })
+      });
 
       if (error) {
-        return { error: error.message }
+        setLoading(false); // Reseta loading em caso de erro
+        return { error: error.message };
       }
 
-      return {}
+      // Se o login for bem-sucedido, atualiza explicitamente o usuário e carrega o perfil
+      // O listener onAuthStateChange também deve capturar isso, mas isso garante uma atualização imediata
+      if (data.user) {
+        setUser(data.user);
+        await loadUserProfile(data.user);
+      }
+      
+      setLoading(false); // Reseta loading após login bem-sucedido
+      return {};
     } catch (error) {
-      return { error: 'Erro interno do servidor' }
+      setLoading(false); // Reseta loading em caso de qualquer erro interno
+      return { error: 'Erro interno do servidor' };
     }
-  }
+  };
 
   const signOut = async () => {
-    await supabase.auth.signOut()
-  }
+    setLoading(true); // Define loading como true durante o logout
+    await supabase.auth.signOut();
+    setLoading(false); // Reseta loading após o logout
+  };
 
   const signUp = async (email, password, name, role) => {
     try {
-      // Primeiro, criar o usuário na tabela auth
-      // O trigger 'on_auth_user_created' no Supabase cuidará de inserir o perfil em public.users
+      setLoading(true); // Define loading como true durante a tentativa de cadastro
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: {
-            name: name, // Passar nome para o meta_data do usuário auth
-            role: role  // Passar role para o meta_data do usuário auth
+            name: name,
+            role: role
           }
         }
-      })
+      });
 
       if (authError) {
-        return { error: authError.message }
+        setLoading(false); // Reseta loading em caso de erro
+        return { error: authError.message };
       }
 
-      // Não é necessário inserir em public.users aqui, o trigger já faz isso.
-      // Apenas garantir que o usuário auth foi criado.
       if (authData.user) {
-        // O perfil será carregado automaticamente pelo onAuthStateChange
-        return {}
+        setUser(authData.user);
+        await loadUserProfile(authData.user);
       }
-
-      return { error: 'Erro desconhecido ao criar usuário.' }
+      
+      setLoading(false); // Reseta loading após cadastro bem-sucedido
+      return {};
     } catch (error) {
-      return { error: 'Erro interno do servidor' }
+      setLoading(false); // Reseta loading em caso de qualquer erro interno
+      return { error: 'Erro interno do servidor' };
     }
-  }
+  };
 
   const updateUserProfile = async (id, updates) => {
     try {
@@ -142,8 +160,8 @@ export function AuthProvider({ children }) {
 
       if (error) throw error;
       
-      setProfile(data); // Update local state
-      setCache(`${CACHE_KEYS.USERS}-${data.id}`, data); // Update cache with user ID
+      setProfile(data);
+      setCache(`${CACHE_KEYS.USERS}-${data.id}`, data);
       return { data };
     } catch (error) {
       console.error('Erro ao atualizar perfil:', error);
@@ -159,15 +177,15 @@ export function AuthProvider({ children }) {
     signOut,
     signUp,
     updateUserProfile,
-  }
+  };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {
-  const context = useContext(AuthContext)
+  const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth deve ser usado dentro de um AuthProvider')
+    throw new Error('useAuth deve ser usado dentro de um AuthProvider');
   }
-  return context
+  return context;
 }
