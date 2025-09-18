@@ -34,8 +34,8 @@ export default function SystemInfo() {
     return () => clearInterval(interval)
   }, [])
 
-  const adminUsers = users.filter(user => user.role === 'ADMIN').length
-  const rhUsers = users.filter(user => user.role === 'RH').length
+  const adminUsers = (users || []).filter(user => user?.role === 'ADMIN').length
+  const rhUsers = (users || []).filter(user => user?.role === 'RH').length
 
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">

@@ -7,6 +7,7 @@ import ListaUsuarios from '../../components/ListaUsuarios'
 import ExportExcel from '../../components/ExportExcel' // Importar ExportExcel
 import ExportUsers from '../../components/ExportUsers' // Importar ExportUsers
 import SystemInfo from '../../components/SystemInfo' // Importar SystemInfo
+import ConfigErrorBoundary from '../../components/ConfigErrorBoundary' // Importar ConfigErrorBoundary
 import { PlusIcon, UserGroupIcon, ArrowDownTrayIcon, Cog6ToothIcon, ArchiveBoxXMarkIcon  } from '@heroicons/react/24/outline' // Adicionado ArchiveBoxXMarkIcon
 import { useVagasCache } from '../../hooks/useSupabaseCache' // Para exportar todas as vagas
 import { useCacheManager } from '../../hooks/useCache' // Importar useCacheManager
@@ -69,7 +70,8 @@ export default function ConfiguracoesPage() {
   }
 
   return (
-    <DashboardLayout requiredRole="ADMIN">
+    <ConfigErrorBoundary>
+      <DashboardLayout requiredRole="ADMIN">
       {/* Header */}
       <header className="bg-white shadow">
         <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
@@ -189,7 +191,7 @@ export default function ConfiguracoesPage() {
                         📋 Backup das Vagas
                       </h4>
                       <p className="text-sm text-gray-600 mb-4">
-                        Exportar todas as vagas cadastradas no sistema ({allVagas.length} registros).
+                        Exportar todas as vagas cadastradas no sistema ({(allVagas || []).length} registros).
                       </p>
                       <ExportExcel
                         vagas={vagasParaExport}
@@ -290,6 +292,7 @@ export default function ConfiguracoesPage() {
           </div>
         </div>
       </main>
-    </DashboardLayout>
+      </DashboardLayout>
+    </ConfigErrorBoundary>
   )
 }

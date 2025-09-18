@@ -48,7 +48,7 @@ export default function ExportUsers({ className = '' }) {
     }
   }
 
-  if (users.length === 0) {
+  if ((users || []).length === 0) {
     return (
       <button
         disabled
@@ -65,7 +65,7 @@ export default function ExportUsers({ className = '' }) {
       disabled={isExporting}
       className={`${className} ${isExporting ? 'opacity-50 cursor-not-allowed' : ''}`}
     >
-      {isExporting ? 'Exportando...' : `Exportar Usuários (${users.length})`}
+      {isExporting ? 'Exportando...' : `Exportar Usuários (${(users || []).length})`}
     </button>
   )
 }
