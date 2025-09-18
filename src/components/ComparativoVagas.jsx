@@ -14,14 +14,14 @@ import { ChevronDownIcon,
   ClipboardDocumentListIcon,
   BriefcaseIcon
  } from '@heroicons/react/24/outline'
-import { useVagasByClienteCache } from '../hooks/useSupabaseCache' // Importar o hook de cache
+import { useData } from '../contexts/DataContext'
 
 export default function ComparativoVagas({ clientesSelecionados, filtros, onVagasChange }) {
   const [secoesExpandidas, setSecoesExpandidas] = useState(new Set())
 
-  // Usar o hook de cache para buscar vagas por cliente
-  const { data: vagasData, loading: vagasLoading } = useVagasByClienteCache(clientesSelecionados)
-  const vagas = vagasData || []
+  // Usar o DataContext para obter dados
+  const { getVagasByCliente, loading: vagasLoading } = useData()
+  const vagas = getVagasByCliente(clientesSelecionados)
 
   // Filtrar as vagas carregadas pelo cache com base nos filtros adicionais
   const vagasFiltradas = useMemo(() => {

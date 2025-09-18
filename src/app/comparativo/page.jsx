@@ -5,9 +5,9 @@ import DashboardLayout from '../../components/DashboardLayout'
 import { ProtectedRoute } from '../../components/ProtectedRoute'
 import SeletorClientes from '../../components/SeletorClientes'
 import ComparativoVagas from '../../components/ComparativoVagas'
-import FiltrosComparativo from '../../components/FiltrosComparativo' // Importar o componente de filtros
+import FiltrosComparativo from '../../components/FiltrosComparativo'
 import ExportExcel from '../../components/ExportExcel'
-import { useVagasByClienteCache } from '../../hooks/useSupabaseCache' // Importar o hook de cache
+import { useData } from '../../contexts/DataContext'
 
 export default function ComparativoPage() {
   const [clientesSelecionados, setClientesSelecionados] = useState([])
@@ -19,11 +19,11 @@ export default function ComparativoPage() {
   })
   const [vagasParaExport, setVagasParaExport] = useState([])
 
-  // Carregar todas as vagas para os clientes selecionados para popular os filtros
-  const { data: vagasDisponiveisParaFiltro } = useVagasByClienteCache(clientesSelecionados);
+  // Usar o DataContext para obter dados
+  const { getVagasByCliente, getVagasFiltradas } = useData()
   
-  // Garantir que sempre temos um array
-  const vagasParaFiltro = vagasDisponiveisParaFiltro || [];
+  // Obter vagas para os clientes selecionados
+  const vagasParaFiltro = getVagasByCliente(clientesSelecionados)
 
   return (
     <ProtectedRoute>

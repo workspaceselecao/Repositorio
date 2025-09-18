@@ -1,5 +1,6 @@
 import './globals.css'
 import { AuthProvider  } from '../contexts/AuthContext'
+import { DataProvider  } from '../contexts/DataContext'
 import { ErrorBoundary  } from '../components/ErrorBoundary'
 import { EnvironmentCheck  } from '../components/EnvironmentCheck'
 
@@ -32,7 +33,9 @@ export default function RootLayout({
         <ErrorBoundary>
           <EnvironmentCheck>
                 <AuthProvider>
-                  {children}
+                  <DataProvider>
+                    {children}
+                  </DataProvider>
                 </AuthProvider>
           </EnvironmentCheck>
         </ErrorBoundary>

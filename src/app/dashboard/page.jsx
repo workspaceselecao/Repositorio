@@ -1,16 +1,15 @@
 'use client'
 
 import DashboardLayout from '../../components/DashboardLayout'
-import { useVagasCache, useClientesCache } from '../../hooks/useSupabaseCache'
+import { useData } from '../../contexts/DataContext'
 import { useMemo } from 'react'
 
 export default function DashboardPage() {
-  const { data: vagas = [], loading: vagasLoading } = useVagasCache()
-  const { data: clientes = [], loading: clientesLoading } = useClientesCache()
+  const { vagas, clientes, loading } = useData()
 
-  // Garantir que vagas e clientes sejam arrays antes de acessar .length
-  const totalVagas = useMemo(() => (vagas || []).length, [vagas])
-  const totalClientes = useMemo(() => (clientes || []).length, [clientes])
+  // Calcular totais
+  const totalVagas = useMemo(() => vagas.length, [vagas])
+  const totalClientes = useMemo(() => clientes.length, [clientes])
 
   return (
     <DashboardLayout>
