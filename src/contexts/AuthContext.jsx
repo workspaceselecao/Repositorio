@@ -15,10 +15,6 @@ export function AuthProvider({ children }) {
 
   const loadUserProfile = useCallback(async (userAuth) => {
     try {
-      if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-        console.error('Variáveis de ambiente do Supabase não configuradas')
-        return
-      }
 
       const cachedProfile = getCache(`${CACHE_KEYS.USERS}-${userAuth.email}`);
       if (cachedProfile) {

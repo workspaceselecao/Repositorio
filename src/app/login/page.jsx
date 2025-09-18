@@ -258,16 +258,6 @@ export default function LoginPage() {
           </div>
         </div>
 
-        {/* Debug Info (apenas em desenvolvimento) */}
-        {process.env.NODE_ENV === 'development' && (
-          <div className="mt-4 p-4 bg-gray-100 rounded-lg text-xs text-gray-600">
-            <div className="font-semibold mb-2">Debug Info:</div>
-            <div>Email válido: {validation.email.isValid ? '✅' : '❌'}</div>
-            <div>Senha válida: {validation.password.isValid ? '✅' : '❌'}</div>
-            <div>Formulário válido: {isFormValid ? '✅' : '❌'}</div>
-            <div>Loading: {loading ? '✅' : '❌'}</div>
-          </div>
-        )}
       </div>
     </div>
   )
