@@ -1,0 +1,33 @@
+{
+  "name": "repositorio-vagas",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "vercel-build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "lint:fix": "next lint --fix"
+  },
+  "dependencies": {
+    "@heroicons/react": "^2.2.0",
+    "@supabase/auth-helpers-nextjs": "^0.8.7",
+    "@supabase/supabase-js": "^2.39.0",
+    "autoprefixer": "^10.0.1",
+    "clsx": "^2.0.0",
+    "lucide-react": "^0.298.0",
+    "next": "14.0.4",
+    "postcss": "^8",
+    "react": "^18",
+    "react-dom": "^18",
+    "tailwind-merge": "^2.2.0",
+    "tailwindcss": "^3.3.0",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "canvas": "^3.2.0",
+    "eslint": "^8",
+    "eslint-config-next": "14.0.4"
+  }
+}

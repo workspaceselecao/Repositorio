@@ -1,0 +1,7 @@
+# Arquivos que devem ser ignorados pela Vercel
+.env.local
+.env*.local
+node_modules
+.git
+.next
+out

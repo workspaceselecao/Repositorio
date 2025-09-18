@@ -1,0 +1,40 @@
+Crie um TODO modularizado, e vá criando por partes: Passe para a nova etapa, pós testada a e implementada a anterior.
+
+Quero criar uma aplicação web usando SUPABASE como banco de dados. 
+O Objetivo é desenvolver um frontend responsivo e amigável. Isto será um repositório de informações comparativas de vagas de emprego.
+Implemente uma página de login com email e senha, utilizando o Supabase Auth(cadastre como ADMIN: Robério Gomes, email: roberio.gomes@atento.com, senha admin123).
+Desenvolva uma página de Configuração para intervenções gerais(Inclusão/exclusão de usuário que será distribuidos entre RH e ADMIN - RH terá todas as funções, menos acesso a página de Configurações e admin terá todas as funcionalidades e acessos disponíveis, para este cadastro, o admin deve informar em um formulário, nome, e-mail e senha provisória. Adicione backup do sistema...)
+Adicione uma sidebar que se expande e contrai para que tenhamos mais espaço de informação, com menu para que o usuário inclua, novas vagas.
+A homepage será uma aba chamada Lista de Clientes onde terá cards com as informações completas de todas as vagas do arquivo json anexo e funcionalidades de botões de download de todas as informações em um arquivo excel/template, editar e excluir.
+O DB no Supabase deve conter uma tabela com as seguintes informações: SITE, CATEGORIA, CARGO, CLIENTE, PRODUTO, Descrição da vaga, Responsabilidades e atribuições, Requisitos e qualificações, Salário, Horário de Trabalho, Jornada de Trabalho, Benefícios, Local de Trabalho, Etapas do processo.
+O conceito e lógica será: Em uma aba chamada Comparativo de Clientes, o usuário poderá pesquisar ou selecionar uma vaga dos clientes desejados em um filtro com as informações da Coluna CLIENTE do DB(seguir JSON anexo), o que vai condicionar as informações que estarão disponíveis nos filtros avançados de combinação de informações constantes do DB com os seguintes palitos e populados com as informações únicas do arquivo JSON em anexo - SITE, CATEGORIA, CARGO, PRODUTO, e poderá verificar as informações de cada tópico da vaga(colunas do DB)
+Inclua separadamente, em um card "Selecionar Clientes para comparação" e popule com as informações da Coluna CLIENTE. Adicione funcionalidades de limpeza de filtros. 
+Separe a página de resultados em 3 colunas de cards que se expandem e contraem de forma simultânea, que contarão com todos os 9 tópicos com as informações do restante da tabela (nomeie o topo de cada Coluna/Card com o Cliente escolhido e distribua os cards nas colunas, um abaixo do outro iniciando por Descrição da vaga, Responsabilidades e atribuições, Requisitos e qualificações, Salário, Horário de Trabalho, Jornada de Trabalho, Benefícios, Local de Trabalho, Etapas do processo) todos em cards expansíveis.
+Implemente uma funcionalidade nos cards para que funcionem em conjunto quando qualquer um dos tópicos específicos forem clicados, todos os outros correlatos terão o mesmo comportamento, se Descrição da vaga for clicado, todos os Descrição da Vaga devem seguir a mesma ação de se expandir ou contrair simultaneamente
+
+Desenvolva um PWA com visual moderno e intuitivo, com fácil integração e que seja dinâmico e responsivo.
+
+
+Credenciais SUPABASE
+
+SUPABASE_URL: https://qdzrldxubcofobqmynab.supabase.co
+SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFkenJsZHh1YmNvZm9icW15bmFiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc3MzkyMjcsImV4cCI6MjA3MzMxNTIyN30.OGrgDawwnY9BXjwYpT36r1ESBHLHE2gf6FWZIYBsm3w
+postgresql://postgres:repoadmin456@db.qdzrldxubcofobqmynab.supabase.co:5432/postgres
+
+
+import { createClient } from '@supabase/supabase-js'
+
+const supabaseUrl = 'https://qdzrldxubcofobqmynab.supabase.co'
+const supabaseKey = process.env.SUPABASE_KEY
+const supabase = createClient(supabaseUrl, supabaseKey)
+
+GitHub
+
+Repositorio
+repoadmin456
+
+https://github.com/workspaceselecao/Repositorio.git
+
+Qualquer outra necessidade de Configuração, me pergunte ou me oriente do que deve ser feito e como deve ser feito.
+Crie os DB conforme necessário.
+Proteja as Keys
