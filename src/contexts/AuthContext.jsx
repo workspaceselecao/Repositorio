@@ -13,7 +13,7 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true)
   const { set: setCache, get: getCache } = useCacheManager() // Desestruturado getCache
 
-  const loadUserProfile = useCallback(async (email) => { // Envolvido em useCallback
+  const loadUserProfile = useCallback(async (userAuth) => { // Envolvido em useCallback, renomeado para userAuth
     try {
       // Verificar se as variáveis de ambiente estão configuradas
       if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
@@ -22,7 +22,7 @@ export function AuthProvider({ children }) {
       }
 
       // Tentar carregar do cache primeiro
-      const cachedProfile = getCache(`${CACHE_KEYS.USERS}-${email}`);
+      const cachedProfile = getCache(`${CACHE_KEYS.USERS}-${userAuth.id}`); // Usar userAuth.id para a chave do cache
       if (cachedProfile) {
         setProfile(cachedProfile);
         return;
@@ -31,7 +31,7 @@ export function AuthProvider({ children }) {
       const { data, error } = await supabase
         .from('users')
         .select('*')
-        .eq('email', email)
+        .eq('id', userAuth.id) // Buscar pelo ID do usuário autenticado
         .single()
 
       if (error) {
@@ -41,7 +41,7 @@ export function AuthProvider({ children }) {
 
       if (data) {
         setProfile(data)
-        setCache(`${CACHE_KEYS.USERS}-${email}`, data); // Cache the profile
+        setCache(`${CACHE_KEYS.USERS}-${userAuth.id}`, data); // Cache o perfil
       }
     } catch (error) {
       console.error('Erro ao carregar perfil do usuário:', error)
@@ -53,7 +53,7 @@ export function AuthProvider({ children }) {
       const { data: { session } } = await supabase.auth.getSession()
       if (session?.user) {
         setUser(session.user)
-        await loadUserProfile(session.user.email)
+        await loadUserProfile(session.user) // Passar o objeto user completo
       }
       setLoading(false)
     }
@@ -64,7 +64,7 @@ export function AuthProvider({ children }) {
       async (event, session) => {
         if (session?.user) {
           setUser(session.user)
-          await loadUserProfile(session.user.email)
+          await loadUserProfile(session.user) // Passar o objeto user completo
         } else {
           setUser(null)
           setProfile(null)
@@ -143,7 +143,7 @@ export function AuthProvider({ children }) {
       if (error) throw error;
       
       setProfile(data); // Update local state
-      setCache(`${CACHE_KEYS.USERS}-${data.email}`, data); // Update cache
+      setCache(`${CACHE_KEYS.USERS}-${data.id}`, data); // Update cache with user ID
       return { data };
     } catch (error) {
       console.error('Erro ao atualizar perfil:', error);
