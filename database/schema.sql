@@ -54,81 +54,35 @@ CREATE TRIGGER update_vagas_updated_at
 ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.vagas ENABLE ROW LEVEL SECURITY;
 
--- Criar políticas de segurança
--- ADMIN pode ver todos os usuários, outros usuários veem apenas seus próprios dados
-CREATE POLICY "Users can view user data" ON public.users
-    FOR SELECT USING (
-        auth.email() = email OR 
-        EXISTS (
-            SELECT 1 FROM public.users 
-            WHERE email = auth.email() AND role = 'ADMIN'
-        )
-    );
+-- Criar políticas de segurança - SIMPLES E SEM RECURSÃO
+-- Todos os usuários autenticados podem acessar dados
+-- A segurança será controlada no frontend através dos componentes
 
--- ADMIN pode atualizar todos os usuários, outros usuários podem atualizar apenas seus próprios dados
-CREATE POLICY "Users can update user data" ON public.users
-    FOR UPDATE USING (
-        auth.email() = email OR 
-        EXISTS (
-            SELECT 1 FROM public.users 
-            WHERE email = auth.email() AND role = 'ADMIN'
-        )
-    );
+-- Políticas para usuários
+CREATE POLICY "Authenticated users can view users" ON public.users
+    FOR SELECT USING (auth.role() = 'authenticated');
 
--- Permitir inserção de usuários apenas para ADMIN
-CREATE POLICY "Only admin can insert users" ON public.users
-    FOR INSERT WITH CHECK (
-        EXISTS (
-            SELECT 1 FROM public.users 
-            WHERE email = auth.email() AND role = 'ADMIN'
-        )
-    );
+CREATE POLICY "Authenticated users can update users" ON public.users
+    FOR UPDATE USING (auth.role() = 'authenticated');
 
--- Apenas ADMIN pode deletar usuários
-CREATE POLICY "Only admin can delete users" ON public.users
-    FOR DELETE USING (
-        EXISTS (
-            SELECT 1 FROM public.users 
-            WHERE email = auth.email() AND role = 'ADMIN'
-        )
-    );
+CREATE POLICY "Authenticated users can insert users" ON public.users
+    FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+
+CREATE POLICY "Authenticated users can delete users" ON public.users
+    FOR DELETE USING (auth.role() = 'authenticated');
 
 -- Políticas para vagas
--- RH e ADMIN podem visualizar vagas
-CREATE POLICY "RH and ADMIN can view vagas" ON public.vagas
-    FOR SELECT USING (
-        EXISTS (
-            SELECT 1 FROM public.users 
-            WHERE email = auth.email() AND role IN ('RH', 'ADMIN')
-        )
-    );
+CREATE POLICY "Authenticated users can view vagas" ON public.vagas
+    FOR SELECT USING (auth.role() = 'authenticated');
 
--- RH e ADMIN podem inserir vagas
-CREATE POLICY "RH and ADMIN can insert vagas" ON public.vagas
-    FOR INSERT WITH CHECK (
-        EXISTS (
-            SELECT 1 FROM public.users 
-            WHERE email = auth.email() AND role IN ('RH', 'ADMIN')
-        )
-    );
+CREATE POLICY "Authenticated users can insert vagas" ON public.vagas
+    FOR INSERT WITH CHECK (auth.role() = 'authenticated');
 
--- RH e ADMIN podem atualizar vagas
-CREATE POLICY "RH and ADMIN can update vagas" ON public.vagas
-    FOR UPDATE USING (
-        EXISTS (
-            SELECT 1 FROM public.users 
-            WHERE email = auth.email() AND role IN ('RH', 'ADMIN')
-        )
-    );
+CREATE POLICY "Authenticated users can update vagas" ON public.vagas
+    FOR UPDATE USING (auth.role() = 'authenticated');
 
--- RH e ADMIN podem deletar vagas
-CREATE POLICY "RH and ADMIN can delete vagas" ON public.vagas
-    FOR DELETE USING (
-        EXISTS (
-            SELECT 1 FROM public.users 
-            WHERE email = auth.email() AND role IN ('RH', 'ADMIN')
-        )
-    );
+CREATE POLICY "Authenticated users can delete vagas" ON public.vagas
+    FOR DELETE USING (auth.role() = 'authenticated');
 
 -- Inserir usuário ADMIN inicial
 INSERT INTO public.users (email, name, role) 
