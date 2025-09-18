@@ -20,7 +20,8 @@ export default function ComparativoVagas({ clientesSelecionados, filtros, onVaga
   const [secoesExpandidas, setSecoesExpandidas] = useState(new Set())
 
   // Usar o hook de cache para buscar vagas por cliente
-  const { data: vagas = [], loading: vagasLoading } = useVagasByClienteCache(clientesSelecionados)
+  const { data: vagasData, loading: vagasLoading } = useVagasByClienteCache(clientesSelecionados)
+  const vagas = vagasData || []
 
   // Filtrar as vagas carregadas pelo cache com base nos filtros adicionais
   const vagasFiltradas = useMemo(() => {

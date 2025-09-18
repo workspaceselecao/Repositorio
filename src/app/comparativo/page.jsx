@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import DashboardLayout from '../../components/DashboardLayout'
+import { ProtectedRoute } from '../../components/ProtectedRoute'
 import SeletorClientes from '../../components/SeletorClientes'
 import ComparativoVagas from '../../components/ComparativoVagas'
 import FiltrosComparativo from '../../components/FiltrosComparativo' // Importar o componente de filtros
@@ -19,10 +20,14 @@ export default function ComparativoPage() {
   const [vagasParaExport, setVagasParaExport] = useState([])
 
   // Carregar todas as vagas para os clientes selecionados para popular os filtros
-  const { data: vagasDisponiveisParaFiltro = [] } = useVagasByClienteCache(clientesSelecionados);
+  const { data: vagasDisponiveisParaFiltro } = useVagasByClienteCache(clientesSelecionados);
+  
+  // Garantir que sempre temos um array
+  const vagasParaFiltro = vagasDisponiveisParaFiltro || [];
 
   return (
-    <DashboardLayout>
+    <ProtectedRoute>
+      <DashboardLayout>
       {/* Header */}
       <header className="bg-white shadow">
         <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
@@ -74,7 +79,7 @@ export default function ComparativoPage() {
                 <FiltrosComparativo 
                   filtros={filtros}
                   onFiltrosChange={setFiltros}
-                  vagasDisponiveis={vagasDisponiveisParaFiltro} // Passar as vagas para o componente de filtros
+                  vagasDisponiveis={vagasParaFiltro} // Passar as vagas para o componente de filtros
                 />
               </div>
             )}
@@ -111,6 +116,7 @@ export default function ComparativoPage() {
           </div>
         </div>
       </main>
-    </DashboardLayout>
+      </DashboardLayout>
+    </ProtectedRoute>
   )
 }

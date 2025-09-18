@@ -16,11 +16,11 @@ export default function FiltrosComparativo({
 
   // Recalcular opções de filtro sempre que as vagas disponíveis mudarem
   useEffect(() => {
-    if (vagasDisponiveis.length > 0) {
-      const sites = Array.from(new Set(vagasDisponiveis?.map(v => v.site).filter(Boolean) || []))
-      const categorias = Array.from(new Set(vagasDisponiveis?.map(v => v.categoria).filter(Boolean) || []))
-      const cargos = Array.from(new Set(vagasDisponiveis?.map(v => v.cargo).filter(Boolean) || []))
-      const produtos = Array.from(new Set(vagasDisponiveis?.map(v => v.produto).filter(Boolean) || []))
+    if (vagasDisponiveis && vagasDisponiveis.length > 0) {
+      const sites = Array.from(new Set(vagasDisponiveis.map(v => v.site).filter(Boolean)))
+      const categorias = Array.from(new Set(vagasDisponiveis.map(v => v.categoria).filter(Boolean)))
+      const cargos = Array.from(new Set(vagasDisponiveis.map(v => v.cargo).filter(Boolean)))
+      const produtos = Array.from(new Set(vagasDisponiveis.map(v => v.produto).filter(Boolean)))
 
       setOpcoesFiltros({
         sites: sites.sort(),

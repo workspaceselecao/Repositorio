@@ -9,7 +9,8 @@ export default function SeletorClientes({
   onClientesChange, 
   maxClientes = 3 
 }) {
-  const { data: clientesData = [], loading: clientesLoading } = useClientesCache() // Usar o hook de cache
+  const { data: clientesData, loading: clientesLoading } = useClientesCache() // Usar o hook de cache
+  const clientes = clientesData || []
 
   const toggleCliente = useCallback((cliente) => {
     if (clientesSelecionados.includes(cliente)) {
@@ -96,7 +97,7 @@ export default function SeletorClientes({
 
       {/* Lista de clientes disponíveis */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-        {clientesData.map((cliente) => {
+        {clientes.map((cliente) => {
           const selecionado = clientesSelecionados.includes(cliente.nome)
           const desabilitado = !selecionado && clientesSelecionados.length >= maxClientes
 
@@ -132,7 +133,7 @@ export default function SeletorClientes({
         })}
       </div>
 
-      {clientesData.length === 0 && (
+      {clientes.length === 0 && (
         <div className="text-center py-6 text-gray-500">
           <p>Nenhum cliente encontrado</p>
           <p className="text-sm mt-1">Importe dados primeiro na página Lista de Clientes</p>
