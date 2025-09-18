@@ -1,167 +1,19 @@
 'use client'
 
-import { useState, useEffect, useCallback, useMemo, memo } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { supabase } from '../lib/supabase'
 import EditarVagaModal from './EditarVagaModal'
-import Pagination from './Pagination'
-import VirtualizedVagasList from './VirtualizedVagasList'
 import PerformanceDashboard from './PerformanceDashboard'
-import VagaCardExpansivel from './VagaCardExpansivel'
-// import { Vaga } from '../types' // Removido, pois o projeto é JS e não usa tipagem aqui
 import { useDebounce } from '../hooks/useDebounce'
 import { usePagination } from '../hooks/usePagination'
-import { useVagasCache, useClientesCache, useSitesCache } from '../hooks/useSupabaseCache'
+import { useVagasCache } from '../hooks/useSupabaseCache'
 import { useAPIPerformance, useUserPerformance, useMemoryMonitor } from '../hooks/usePerformanceMetrics'
-import {
-  PencilIcon,
-  TrashIcon,
-  BuildingOfficeIcon,
-  MapPinIcon,
-  CurrencyDollarIcon,
-  ClockIcon,
-  UserGroupIcon,
-  ArrowDownTrayIcon,
-  ChartBarIcon
-} from '@heroicons/react/24/outline'
 import * as XLSX from 'xlsx'
 
-const VagaCard = memo(function VagaCard({ vaga, onEdit, onDelete, onExport }) {
-  const [expanded, setExpanded] = useState(false)
-
-  const handleDelete = () => {
-    if (confirm(`Tem certeza que deseja excluir a vaga ${vaga.cargo} - ${vaga.cliente}?`)) {
-      onDelete(vaga.id)
-    }
-  }
-
-  return (
-    <div className="bg-white shadow-md rounded-lg border border-gray-200 hover:shadow-lg transition-shadow">
-      <div className="p-4">
-        <div className="flex justify-between items-start mb-2">
-          <h3 className="text-lg font-semibold text-gray-900">{vaga.cargo}</h3>
-          <div className="flex space-x-2">
-            <button
-              onClick={() => onEdit(vaga)}
-              className="p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-md transition-colors"
-              title="Editar vaga"
-            >
-              <PencilIcon className="h-4 w-4" />
-            </button>
-            <button
-              onClick={() => onExport(vaga)}
-              className="p-2 text-green-600 hover:text-green-800 hover:bg-green-50 rounded-md transition-colors"
-              title="Exportar vaga para Excel"
-            >
-              <ArrowDownTrayIcon className="h-4 w-4" />
-            </button>
-            <button
-              onClick={handleDelete}
-              className="p-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-md transition-colors"
-              title="Excluir vaga"
-            >
-              <TrashIcon className="h-4 w-4" />
-            </button>
-          </div>
-        </div>
-
-        {/* Informações principais */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-          <div className="flex items-center text-gray-600">
-            <MapPinIcon className="h-4 w-4 mr-2" />
-            <span className="text-sm">{vaga.site}</span>
-          </div>
-          <div className="flex items-center text-gray-600">
-            <UserGroupIcon className="h-4 w-4 mr-2" />
-            <span className="text-sm">{vaga.categoria}</span>
-          </div>
-          {vaga.salario && (
-            <div className="flex items-center text-green-600">
-              <CurrencyDollarIcon className="h-4 w-4 mr-2" />
-              <span className="text-sm font-medium">{vaga.salario}</span>
-            </div>
-          )}
-          {vaga.jornada_trabalho && (
-            <div className="flex items-center text-gray-600">
-              <ClockIcon className="h-4 w-4 mr-2" />
-              <span className="text-sm">{vaga.jornada_trabalho}</span>
-            </div>
-          )}
-        </div>
-
-        {/* Produto */}
-        <div className="mb-4">
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-            {vaga.produto}
-          </span>
-        </div>
-
-        {/* Botão expandir */}
-        <button
-          onClick={() => setExpanded(!expanded)}
-          className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-        >
-          {expanded ? 'Ver menos' : 'Ver mais detalhes'}
-        </button>
-      </div>
-
-      {/* Conteúdo expandido */}
-      {expanded && (
-        <div className="border-t border-gray-200 p-6 space-y-4">
-          {vaga.descricao_vaga && (
-            <div>
-              <h4 className="font-semibold text-gray-900 mb-2">Descrição da Vaga</h4>
-              <p className="text-gray-700 text-sm whitespace-pre-line">{vaga.descricao_vaga}</p>
-            </div>
-          )}
-
-          {vaga.responsabilidades_atribuicoes && (
-            <div>
-              <h4 className="font-semibold text-gray-900 mb-2">Responsabilidades e Atribuições</h4>
-              <p className="text-gray-700 text-sm whitespace-pre-line">{vaga.responsabilidades_atribuicoes}</p>
-            </div>
-          )}
-
-          {vaga.requisitos_qualificacoes && (
-            <div>
-              <h4 className="font-semibold text-gray-900 mb-2">Requisitos e Qualificações</h4>
-              <p className="text-gray-700 text-sm whitespace-pre-line">{vaga.requisitos_qualificacoes}</p>
-            </div>
-          )}
-
-          {vaga.horario_trabalho && (
-            <div>
-              <h4 className="font-semibold text-gray-900 mb-2">Horário de Trabalho</h4>
-              <p className="text-gray-700 text-sm">{vaga.horario_trabalho}</p>
-            </div>
-          )}
-
-          {vaga.beneficios && (
-            <div>
-              <h4 className="font-semibold text-gray-900 mb-2">Benefícios</h4>
-              <p className="text-gray-700 text-sm whitespace-pre-line">{vaga.beneficios}</p>
-            </div>
-          )}
-
-          {vaga.local_trabalho && (
-            <div>
-              <h4 className="font-semibold text-gray-900 mb-2">Local de Trabalho</h4>
-              <p className="text-gray-700 text-sm">{vaga.local_trabalho}</p>
-            </div>
-          )}
-
-          {vaga.etapas_processo && (
-            <div>
-              <h4 className="font-semibold text-gray-900 mb-2">Etapas do Processo</h4>
-              <p className="text-gray-700 text-sm whitespace-pre-line">{vaga.etapas_processo}</p>
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  )
-})
-
-
+// Importar os novos componentes modulares
+import VagaFilters from './vagas/VagaFilters'
+import VagaListControls from './vagas/VagaListControls'
+import VagaDisplay from './vagas/VagaDisplay'
 
 export default function ListaVagas({ onVagasChange }) {
   const [searchTerm, setSearchTerm] = useState('')
@@ -183,20 +35,6 @@ export default function ListaVagas({ onVagasChange }) {
     error: vagasError,
     refetch
   } = useVagasCache()
-
-  const {
-    data: clientes = [],
-    loading: clientesLoading
-  } = useClientesCache()
-
-  const {
-    data: sites = [],
-    loading: sitesLoading
-  } = useSitesCache()
-
-  // Extrair nomes dos clientes e sites para filtros
-  const clientesNomes = useMemo(() => clientes?.map(c => c.nome) || [], [clientes])
-  const sitesNomes = useMemo(() => sites || [], [sites])
 
   const error = vagasError?.message || ''
 
@@ -410,201 +248,37 @@ export default function ListaVagas({ onVagasChange }) {
   return (
     <div className="space-y-6">
       {/* Filtros */}
-      <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Filtros</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Buscar</label>
-            <input
-              type="text"
-              placeholder="Buscar por cargo, cliente ou produto..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Cliente
-            </label>
-            <select
-              value={filterCliente}
-              onChange={(e) => setFilterCliente(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              disabled={clientesLoading}
-            >
-              <option value="">Todos os clientes</option>
-              {clientesNomes.map(cliente => (
-                <option key={cliente} value={cliente}>{cliente}</option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Site
-            </label>
-            <select
-              value={filterSite}
-              onChange={(e) => setFilterSite(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              disabled={sitesLoading}
-            >
-              <option value="">Todos os sites</option>
-              {sitesNomes.map(site => (
-                <option key={site} value={site}>{site}</option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        {(searchTerm || filterCliente || filterSite) && (
-          <div className="mt-4">
-            <button
-              onClick={() => {
-                setSearchTerm('')
-                setFilterCliente('')
-                setFilterSite('')
-              }}
-              className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-            >
-              Limpar filtros
-            </button>
-          </div>
-        )}
-      </div>
+      <VagaFilters
+        searchTerm={searchTerm}
+        setSearchTerm={setSearchTerm}
+        filterCliente={filterCliente}
+        setFilterCliente={setFilterCliente}
+        filterSite={filterSite}
+        setFilterSite={setFilterSite}
+      />
 
       {/* Estatísticas e controles de paginação */}
-      <div className="bg-blue-50 p-4 rounded-lg">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <p className="text-blue-800">
-            Mostrando <span className="font-semibold">{pagination.startIndex + 1}-{Math.min(pagination.endIndex, pagination.totalItems)}</span> de{' '}
-            <span className="font-semibold">{pagination.totalItems}</span> vagas
-            {pagination.totalItems !== (vagas?.length || 0) && (
-              <span className="text-blue-600"> (filtradas de {vagas?.length || 0} total)</span>
-            )}
-          </p>
-
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <label className="text-sm text-blue-700">Visualização:</label>
-              <select
-                value={viewMode}
-                onChange={(e) => setViewMode(e.target.value)}
-                className="px-2 py-1 border border-blue-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="expanded">Expandida (1 por linha)</option>
-                <option value="paginated">Paginada</option>
-                <option value="virtualized">Virtualizada</option>
-              </select>
-            </div>
-
-            <button
-              onClick={() => setShowPerformanceDashboard(true)}
-              className="flex items-center gap-1 px-3 py-1 bg-purple-600 text-white rounded text-sm hover:bg-purple-700"
-            >
-              <ChartBarIcon className="h-4 w-4" />
-              Performance
-            </button>
-
-            {(viewMode === 'paginated' || viewMode === 'expanded') && (
-              <div className="flex items-center gap-2">
-                <label className="text-sm text-blue-700">Itens por página:</label>
-                <select
-                  value={itemsPerPage}
-                  onChange={(e) => setItemsPerPage(Number(e.target.value))}
-                  className="px-2 py-1 border border-blue-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value={3}>3</option>
-                  <option value={6}>6</option>
-                  <option value={12}>12</option>
-                  <option value={24}>24</option>
-                </select>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
+      <VagaListControls
+        viewMode={viewMode}
+        setViewMode={setViewMode}
+        itemsPerPage={itemsPerPage}
+        setItemsPerPage={setItemsPerPage}
+        setShowPerformanceDashboard={setShowPerformanceDashboard}
+        totalItems={pagination.totalItems}
+        totalVagasRaw={vagas?.length || 0}
+      />
 
       {/* Lista de vagas */}
-      {pagination.totalItems === 0 ? (
-        <div className="text-center py-12">
-          <p className="text-gray-500 text-lg">Nenhuma vaga encontrada</p>
-          {(vagas?.length || 0) === 0 && (
-            <p className="text-gray-400 text-sm mt-2">
-              Importe os dados do JSON para começar
-            </p>
-          )}
-        </div>
-      ) : viewMode === 'virtualized' ? (
-        <VirtualizedVagasList
-          vagas={vagasFiltradas}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
-          onExport={handleExportVaga}
-          containerHeight={600}
-          itemHeight={200}
-        />
-      ) : viewMode === 'expanded' ? (
-        <>
-          <div className="space-y-6">
-            {pagination.paginatedData.map((vaga) => (
-              <VagaCardExpansivel
-                key={vaga.id}
-                vaga={vaga}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-                onExport={handleExportVaga}
-              />
-            ))}
-          </div>
-
-          {/* Componente de paginação */}
-          <Pagination
-            currentPage={pagination.currentPage}
-            totalPages={pagination.totalPages}
-            onPageChange={pagination.goToPage}
-            onNext={pagination.nextPage}
-            onPrev={pagination.prevPage}
-            canGoNext={pagination.canGoNext}
-            canGoPrev={pagination.canGoPrev}
-            startIndex={pagination.startIndex}
-            endIndex={pagination.endIndex}
-            totalItems={pagination.totalItems}
-            itemsPerPage={itemsPerPage}
-          />
-        </>
-      ) : (
-        <>
-          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-            {pagination.paginatedData.map(vaga => ( {/* Corrigido de currentPageData para paginatedData */}
-              <VagaCard
-                key={vaga.id}
-                vaga={vaga}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-                onExport={handleExportVaga}
-              />
-            ))}
-          </div>
-
-          {/* Componente de paginação */}
-          <Pagination
-            currentPage={pagination.currentPage}
-            totalPages={pagination.totalPages}
-            onPageChange={pagination.goToPage}
-            onNext={pagination.nextPage}
-            onPrev={pagination.prevPage}
-            canGoNext={pagination.canGoNext}
-            canGoPrev={pagination.canGoPrev}
-            startIndex={pagination.startIndex}
-            endIndex={pagination.endIndex}
-            totalItems={pagination.totalItems}
-            itemsPerPage={itemsPerPage}
-          />
-        </>
-      )}
+      <VagaDisplay
+        vagas={vagasFiltradas}
+        viewMode={viewMode}
+        pagination={pagination}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+        onExport={handleExportVaga}
+        itemsPerPage={itemsPerPage}
+        totalVagasRaw={vagas?.length || 0}
+      />
 
       {/* Modal de edição */}
       <EditarVagaModal
