@@ -1,60 +1,17 @@
--- Criar extensão UUID se não existir
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+-- Script para atualizar políticas RLS
+-- Execute este script no Supabase SQL Editor
 
--- Criar tabela de usuários personalizada
-CREATE TABLE IF NOT EXISTS public.users (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    email VARCHAR UNIQUE NOT NULL,
-    name VARCHAR NOT NULL,
-    role VARCHAR CHECK (role IN ('ADMIN', 'RH')) NOT NULL DEFAULT 'RH',
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
+-- Remover políticas antigas
+DROP POLICY IF EXISTS "Users can view own user data" ON public.users;
+DROP POLICY IF EXISTS "Users can update own user data" ON public.users;
+DROP POLICY IF EXISTS "Authenticated users can insert users" ON public.users;
+DROP POLICY IF EXISTS "Only admin can delete users" ON public.users;
+DROP POLICY IF EXISTS "Authenticated users can view vagas" ON public.vagas;
+DROP POLICY IF EXISTS "Authenticated users can insert vagas" ON public.vagas;
+DROP POLICY IF EXISTS "Authenticated users can update vagas" ON public.vagas;
+DROP POLICY IF EXISTS "Authenticated users can delete vagas" ON public.vagas;
 
--- Criar tabela de vagas
-CREATE TABLE IF NOT EXISTS public.vagas (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    site VARCHAR NOT NULL,
-    categoria VARCHAR NOT NULL,
-    cargo VARCHAR NOT NULL,
-    cliente VARCHAR NOT NULL,
-    produto VARCHAR NOT NULL,
-    descricao_vaga TEXT,
-    responsabilidades_atribuicoes TEXT,
-    requisitos_qualificacoes TEXT,
-    salario TEXT,
-    horario_trabalho TEXT,
-    jornada_trabalho TEXT,
-    beneficios TEXT,
-    local_trabalho TEXT,
-    etapas_processo TEXT,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- Criar função para atualizar updated_at automaticamente
-CREATE OR REPLACE FUNCTION update_updated_at_column()
-RETURNS TRIGGER AS $$
-BEGIN
-    NEW.updated_at = NOW();
-    RETURN NEW;
-END;
-$$ language 'plpgsql';
-
--- Criar triggers para atualizar updated_at
-CREATE TRIGGER update_users_updated_at 
-    BEFORE UPDATE ON public.users 
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
-CREATE TRIGGER update_vagas_updated_at 
-    BEFORE UPDATE ON public.vagas 
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
--- Habilitar RLS (Row Level Security)
-ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.vagas ENABLE ROW LEVEL SECURITY;
-
--- Criar políticas de segurança
+-- Criar novas políticas de segurança para usuários
 -- ADMIN pode ver todos os usuários, outros usuários veem apenas seus próprios dados
 CREATE POLICY "Users can view user data" ON public.users
     FOR SELECT USING (
@@ -93,7 +50,7 @@ CREATE POLICY "Only admin can delete users" ON public.users
         )
     );
 
--- Políticas para vagas
+-- Criar novas políticas de segurança para vagas
 -- RH e ADMIN podem visualizar vagas
 CREATE POLICY "RH and ADMIN can view vagas" ON public.vagas
     FOR SELECT USING (
@@ -130,7 +87,17 @@ CREATE POLICY "RH and ADMIN can delete vagas" ON public.vagas
         )
     );
 
--- Inserir usuário ADMIN inicial
-INSERT INTO public.users (email, name, role) 
-VALUES ('roberio.gomes@atento.com', 'Robério Gomes', 'ADMIN')
-ON CONFLICT (email) DO NOTHING;
+-- Verificar se as políticas foram criadas corretamente
+SELECT 
+    schemaname,
+    tablename,
+    policyname,
+    permissive,
+    roles,
+    cmd,
+    qual,
+    with_check
+FROM pg_policies 
+WHERE schemaname = 'public' 
+AND tablename IN ('users', 'vagas')
+ORDER BY tablename, policyname;

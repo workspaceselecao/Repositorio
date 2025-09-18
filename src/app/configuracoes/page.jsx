@@ -5,12 +5,14 @@ import DashboardLayout from '../../components/DashboardLayout'
 import NovoUsuarioForm from '../../components/NovoUsuarioForm'
 import ListaUsuarios from '../../components/ListaUsuarios'
 import ExportExcel from '../../components/ExportExcel' // Importar ExportExcel
+import ExportUsers from '../../components/ExportUsers' // Importar ExportUsers
+import SystemInfo from '../../components/SystemInfo' // Importar SystemInfo
 import { PlusIcon, UserGroupIcon, ArrowDownTrayIcon, Cog6ToothIcon, ArchiveBoxXMarkIcon  } from '@heroicons/react/24/outline' // Adicionado ArchiveBoxXMarkIcon
 import { useVagasCache } from '../../hooks/useSupabaseCache' // Para exportar todas as vagas
 import { useCacheManager } from '../../hooks/useCache' // Importar useCacheManager
 
 export default function ConfiguracoesPage() {
-  const [activeTab, setActiveTab] = useState<'usuarios' | 'backup' | 'sistema'>('usuarios')
+  const [activeTab, setActiveTab] = useState('usuarios')
   const [showNewUserForm, setShowNewUserForm] = useState(false)
   const { data: allVagas = [] } = useVagasCache() // Carregar todas as vagas para backup
   const { clear: clearAppCache } = useCacheManager() // Obter a função clear do cache manager
@@ -92,6 +94,17 @@ export default function ConfiguracoesPage() {
                   Gerenciar Usuários
                 </button>
                 <button
+                  onClick={() => setActiveTab('backup')}
+                  className={`${
+                    activeTab === 'backup'
+                      ? 'border-blue-500 text-blue-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  } whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm flex items-center`}
+                >
+                  <ArrowDownTrayIcon className="h-5 w-5 mr-2" />
+                  Backup do Sistema
+                </button>
+                <button
                   onClick={() => setActiveTab('sistema')}
                   className={`${
                     activeTab === 'sistema'
@@ -138,30 +151,89 @@ export default function ConfiguracoesPage() {
               </div>
             )}
 
-            {activeTab === 'sistema' && (
-              <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-                
-                {/* Backup do Sistema */}
-                <div className="bg-white shadow rounded-lg p-6">
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">
-                    💾 Backup do Sistema
-                  </h3>
-                  <p className="text-gray-500 mb-4">
-                    Fazer backup e restaurar dados do sistema.
-                  </p>
-                  <div className="space-y-2 text-sm text-gray-600 mb-4">
-                    <p>• Export completo das vagas</p>
-                    <p>• Backup das configurações</p>
-                    <p>• Histórico de backups realizados</p>
+            {activeTab === 'backup' && (
+              <div className="space-y-6">
+                <div className="bg-white shadow rounded-lg">
+                  <div className="px-6 py-4 border-b border-gray-200">
+                    <h3 className="text-lg font-medium text-gray-900">
+                      💾 Backup Completo do Sistema
+                    </h3>
+                    <p className="mt-2 text-sm text-gray-600">
+                      Faça backup de todos os dados do sistema incluindo vagas, usuários e configurações.
+                    </p>
                   </div>
-                  {/* Botão de backup usando ExportExcel */}
-                  <ExportExcel
-                    vagas={vagasParaExport}
-                    filename="backup-vagas-completo"
-                    buttonText="Fazer Backup Agora"
-                    className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium"
-                  />
+                  
+                  <div className="px-6 py-4 space-y-6">
+                    {/* Backup de Vagas */}
+                    <div className="border border-gray-200 rounded-lg p-4">
+                      <h4 className="text-md font-medium text-gray-900 mb-2">
+                        📋 Backup das Vagas
+                      </h4>
+                      <p className="text-sm text-gray-600 mb-4">
+                        Exportar todas as vagas cadastradas no sistema ({allVagas.length} registros).
+                      </p>
+                      <ExportExcel
+                        vagas={vagasParaExport}
+                        filename={`backup-vagas-${new Date().toISOString().split('T')[0]}`}
+                        buttonText="Fazer Backup das Vagas"
+                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium"
+                      />
+                    </div>
+
+                    {/* Backup de Usuários */}
+                    <div className="border border-gray-200 rounded-lg p-4">
+                      <h4 className="text-md font-medium text-gray-900 mb-2">
+                        👥 Backup dos Usuários
+                      </h4>
+                      <p className="text-sm text-gray-600 mb-4">
+                        Exportar lista de usuários do sistema com informações de perfil e permissões.
+                      </p>
+                      <ExportUsers
+                        className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md text-sm font-medium"
+                      />
+                    </div>
+
+                    {/* Backup Completo */}
+                    <div className="border border-green-200 bg-green-50 rounded-lg p-4">
+                      <h4 className="text-md font-medium text-green-900 mb-2">
+                        🚀 Backup Completo
+                      </h4>
+                      <p className="text-sm text-green-700 mb-4">
+                        Fazer backup completo do sistema com todos os dados disponíveis.
+                      </p>
+                      <ExportExcel
+                        vagas={vagasParaExport}
+                        filename={`backup-completo-${new Date().toISOString().split('T')[0]}`}
+                        buttonText="Fazer Backup Completo"
+                        className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium"
+                      />
+                    </div>
+                  </div>
                 </div>
+
+                {/* Histórico de Backups */}
+                <div className="bg-white shadow rounded-lg">
+                  <div className="px-6 py-4 border-b border-gray-200">
+                    <h3 className="text-lg font-medium text-gray-900">
+                      📊 Histórico de Backups
+                    </h3>
+                    <p className="mt-2 text-sm text-gray-600">
+                      Visualizar histórico de backups realizados (funcionalidade em desenvolvimento).
+                    </p>
+                  </div>
+                  <div className="px-6 py-4">
+                    <div className="text-center py-8 text-gray-500">
+                      <p>Histórico de backups será implementado em breve.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'sistema' && (
+              <div className="space-y-6">
+                {/* Informações do Sistema */}
+                <SystemInfo />
 
                 {/* Gerenciamento de Cache */}
                 <div className="bg-white shadow rounded-lg p-6">
@@ -180,21 +252,6 @@ export default function ConfiguracoesPage() {
                   </button>
                 </div>
 
-                {/* Estatísticas do Sistema */}
-                <div className="bg-white shadow rounded-lg p-6">
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">
-                    📊 Estatísticas do Sistema
-                  </h3>
-                  <p className="text-gray-500 mb-4">
-                    Visualizar métricas e estatísticas do uso.
-                  </p>
-                  <div className="space-y-2 text-sm text-gray-600">
-                    <p>• Total de vagas cadastradas: {allVagas.length}</p>
-                    <p>• Usuários ativos no sistema: Em breve</p>
-                    <p>• Relatórios de utilização: Em breve</p>
-                  </div>
-                </div>
-
                 {/* Configurações Gerais */}
                 <div className="bg-white shadow rounded-lg p-6">
                   <h3 className="text-lg font-medium text-gray-900 mb-4">
@@ -206,7 +263,7 @@ export default function ConfiguracoesPage() {
                   <div className="space-y-2 text-sm text-gray-600">
                     <p>• Configurações de email: Em desenvolvimento</p>
                     <p>• Parâmetros do sistema: Em desenvolvimento</p>
-                    <p>• Logs de atividade: Em desenvolvimento</p>
+                    <p>• Notificações do sistema: Em desenvolvimento</p>
                   </div>
                 </div>
               </div>
