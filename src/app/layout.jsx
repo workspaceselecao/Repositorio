@@ -3,6 +3,8 @@ import { AuthProvider  } from '../contexts/AuthContext'
 import { ErrorBoundary  } from '../components/ErrorBoundary'
 import { EnvironmentCheck  } from '../components/EnvironmentCheck'
 import { EnvironmentDebug  } from '../components/EnvironmentDebug'
+import { AdvancedDebug  } from '../components/AdvancedDebug'
+import { CacheClearer  } from '../components/CacheClearer'
 
 export const metadata = {
   title: 'Repositório de Vagas',
@@ -32,10 +34,12 @@ export default function RootLayout({
       <body className="antialiased">
         <ErrorBoundary>
           <EnvironmentCheck>
-            <AuthProvider>
-              {children}
-              <EnvironmentDebug />
-            </AuthProvider>
+                <AuthProvider>
+                  {children}
+                  <EnvironmentDebug />
+                  <AdvancedDebug />
+                  <CacheClearer />
+                </AuthProvider>
           </EnvironmentCheck>
         </ErrorBoundary>
       </body>
