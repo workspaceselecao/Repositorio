@@ -1,55 +1,15 @@
 'use client'
 
 import { useState, useEffect, useCallback, useMemo  } from 'react'
-import { supabase  } from '../lib/supabase'
 import { XMarkIcon, CheckIcon  } from '@heroicons/react/24/outline'
-
-
-
-
+import { useClientesCache } from '../hooks/useSupabaseCache' // Importar o hook de cache
 
 export default function SeletorClientes({ 
   clientesSelecionados, 
   onClientesChange, 
   maxClientes = 3 
 }) {
-  const [clientes, setClientes] = useState([])
-  const [loading, setLoading] = useState(true)
-
-  const loadClientes = useCallback(async () => {
-    try {
-      const { data, error } = await supabase
-        .from('vagas')
-        .select('cliente')
-        .order('cliente')
-
-      if (error) throw error
-
-      if (data) {
-        // Agrupar e contar vagas por cliente
-        const clientesMap = data.reduce((acc, vaga) => {
-          const cliente = vaga.cliente
-          acc[cliente] = (acc[cliente] || 0) + 1
-          return acc
-        }, {})
-
-        // Converter para array e ordenar
-        const clientesArray = Object.entries(clientesMap)
-          .map(([nome, totalVagas]) => ({ nome, totalVagas }))
-          .sort((a, b) => a.nome.localeCompare(b.nome))
-
-        setClientes(clientesArray)
-      }
-    } catch (err) {
-      console.error('Erro ao carregar clientes:', err)
-    } finally {
-      setLoading(false)
-    }
-  }, [])
-
-  useEffect(() => {
-    loadClientes()
-  }, [loadClientes])
+  const { data: clientesData = [], loading: clientesLoading } = useClientesCache() // Usar o hook de cache
 
   const toggleCliente = useCallback((cliente) => {
     if (clientesSelecionados.includes(cliente)) {
@@ -71,7 +31,7 @@ export default function SeletorClientes({
     onClientesChange([])
   }, [onClientesChange])
 
-  if (loading) {
+  if (clientesLoading) {
     return (
       <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
         <div className="animate-pulse">
@@ -136,7 +96,7 @@ export default function SeletorClientes({
 
       {/* Lista de clientes disponíveis */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-        {clientes.map((cliente) => {
+        {clientesData.map((cliente) => {
           const selecionado = clientesSelecionados.includes(cliente.nome)
           const desabilitado = !selecionado && clientesSelecionados.length >= maxClientes
 
@@ -172,7 +132,7 @@ export default function SeletorClientes({
         })}
       </div>
 
-      {clientes.length === 0 && (
+      {clientesData.length === 0 && (
         <div className="text-center py-6 text-gray-500">
           <p>Nenhum cliente encontrado</p>
           <p className="text-sm mt-1">Importe dados primeiro na página Lista de Clientes</p>

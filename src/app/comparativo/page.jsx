@@ -1,14 +1,25 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import DashboardLayout from '../../components/DashboardLayout'
 import SeletorClientes from '../../components/SeletorClientes'
 import ComparativoVagas from '../../components/ComparativoVagas'
+import FiltrosComparativo from '../../components/FiltrosComparativo' // Importar o componente de filtros
 import ExportExcel from '../../components/ExportExcel'
+import { useVagasByClienteCache } from '../../hooks/useSupabaseCache' // Importar o hook de cache
 
 export default function ComparativoPage() {
   const [clientesSelecionados, setClientesSelecionados] = useState([])
+  const [filtros, setFiltros] = useState({
+    site: '',
+    categoria: '',
+    cargo: '',
+    produto: ''
+  })
   const [vagasParaExport, setVagasParaExport] = useState([])
+
+  // Carregar todas as vagas para os clientes selecionados para popular os filtros
+  const { data: vagasDisponiveisParaFiltro = [] } = useVagasByClienteCache(clientesSelecionados);
 
   return (
     <DashboardLayout>
@@ -27,7 +38,7 @@ export default function ComparativoPage() {
             {clientesSelecionados.length > 0 && (
               <div>
                 <ExportExcel
-                  data={vagasParaExport}
+                  vagas={vagasParaExport} // Passar as vagas para exportar
                   filename="comparativo-vagas"
                   buttonText="Exportar Comparativo"
                   className="bg-purple-600 hover:bg-purple-700"
@@ -60,7 +71,11 @@ export default function ComparativoPage() {
                 <h2 className="text-lg font-medium text-gray-900 mb-4">
                   Filtros de Comparação
                 </h2>
-                {/* <FiltrosComparativo /> */}
+                <FiltrosComparativo 
+                  filtros={filtros}
+                  onFiltrosChange={setFiltros}
+                  vagasDisponiveis={vagasDisponiveisParaFiltro} // Passar as vagas para o componente de filtros
+                />
               </div>
             )}
 
@@ -68,6 +83,7 @@ export default function ComparativoPage() {
             {clientesSelecionados.length > 0 ? (
               <ComparativoVagas 
                 clientesSelecionados={clientesSelecionados}
+                filtros={filtros} // Passar os filtros para o ComparativoVagas
                 onVagasChange={setVagasParaExport}
               />
             ) : (

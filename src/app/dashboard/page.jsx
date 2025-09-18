@@ -1,8 +1,16 @@
 'use client'
 
 import DashboardLayout from '../../components/DashboardLayout'
+import { useVagasCache, useClientesCache } from '../../hooks/useSupabaseCache'
+import { useMemo } from 'react'
 
 export default function DashboardPage() {
+  const { data: vagas = [], loading: vagasLoading } = useVagasCache()
+  const { data: clientes = [], loading: clientesLoading } = useClientesCache()
+
+  const totalVagas = useMemo(() => vagas.length, [vagas])
+  const totalClientes = useMemo(() => clientes.length, [clientes])
+
   return (
     <DashboardLayout>
       {/* Header */}
@@ -33,7 +41,7 @@ export default function DashboardPage() {
                           Total de Vagas
                         </dt>
                         <dd className="text-lg font-medium text-gray-900">
-                          Em breve
+                          {vagasLoading ? 'Carregando...' : totalVagas}
                         </dd>
                       </dl>
                     </div>
@@ -55,7 +63,7 @@ export default function DashboardPage() {
                           Clientes Ativos
                         </dt>
                         <dd className="text-lg font-medium text-gray-900">
-                          Em breve
+                          {clientesLoading ? 'Carregando...' : totalClientes}
                         </dd>
                       </dl>
                     </div>

@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect, useCallback, useMemo  } from 'react'
-import { supabase  } from '../lib/supabase'
 import { ChevronDownIcon, 
   ChevronUpIcon,
   BuildingOfficeIcon,
@@ -13,72 +12,38 @@ import { ChevronDownIcon,
   ListBulletIcon,
   AcademicCapIcon,
   ClipboardDocumentListIcon,
-  HomeIcon,
   BriefcaseIcon
  } from '@heroicons/react/24/outline'
-
-
-
+import { useVagasByClienteCache } from '../hooks/useSupabaseCache' // Importar o hook de cache
 
 export default function ComparativoVagas({ clientesSelecionados, filtros, onVagasChange }) {
-  const [vagasPorCliente, setVagasPorCliente] = useState({})
-  const [loading, setLoading] = useState(false)
   const [secoesExpandidas, setSecoesExpandidas] = useState(new Set())
 
-  const loadVagas = useCallback(async () => {
-    setLoading(true)
-    try {
-      let query = supabase
-        .from('vagas')
-        .select('*')
-        .in('cliente', clientesSelecionados)
-        .order('created_at', { ascending: false })
+  // Usar o hook de cache para buscar vagas por cliente
+  const { data: vagas = [], loading: vagasLoading } = useVagasByClienteCache(clientesSelecionados)
 
-      // Aplicar filtros
-      if (filtros.site) {
-        query = query.eq('site', filtros.site)
+  // Filtrar as vagas carregadas pelo cache com base nos filtros adicionais
+  const vagasFiltradas = useMemo(() => {
+    return vagas.filter(vaga => {
+      const matchSite = filtros.site ? vaga.site === filtros.site : true
+      const matchCategoria = filtros.categoria ? vaga.categoria === filtros.categoria : true
+      const matchCargo = filtros.cargo ? vaga.cargo === filtros.cargo : true
+      const matchProduto = filtros.produto ? vaga.produto === filtros.produto : true
+      return matchSite && matchCategoria && matchCargo && matchProduto
+    })
+  }, [vagas, filtros])
+
+  // Agrupar vagas filtradas por cliente
+  const vagasPorCliente = useMemo(() => {
+    const vagasAgrupadas = {}
+    vagasFiltradas.forEach(vaga => {
+      if (!vagasAgrupadas[vaga.cliente]) {
+        vagasAgrupadas[vaga.cliente] = []
       }
-      if (filtros.categoria) {
-        query = query.eq('categoria', filtros.categoria)
-      }
-      if (filtros.cargo) {
-        query = query.eq('cargo', filtros.cargo)
-      }
-      if (filtros.produto) {
-        query = query.eq('produto', filtros.produto)
-      }
-
-      const { data, error } = await query
-
-      if (error) {
-        console.error('Erro ao carregar vagas:', error)
-        return
-      }
-
-      // Agrupar vagas por cliente
-      const vagasAgrupadas = {}
-      data?.forEach(vaga => {
-        if (!vagasAgrupadas[vaga.cliente]) {
-          vagasAgrupadas[vaga.cliente] = []
-        }
-        vagasAgrupadas[vaga.cliente].push(vaga)
-      })
-
-      setVagasPorCliente(vagasAgrupadas)
-    } catch (error) {
-      console.error('Erro ao carregar vagas:', error)
-    } finally {
-      setLoading(false)
-    }
-  }, [clientesSelecionados, filtros])
-
-  useEffect(() => {
-    if (clientesSelecionados.length > 0) {
-      loadVagas()
-    } else {
-      setVagasPorCliente({})
-    }
-  }, [clientesSelecionados, loadVagas])
+      vagasAgrupadas[vaga.cliente].push(vaga)
+    })
+    return vagasAgrupadas
+  }, [vagasFiltradas])
 
   // Memoizar transformação das vagas para export
   const vagasParaExport = useMemo(() => {
@@ -183,7 +148,7 @@ export default function ComparativoVagas({ clientesSelecionados, filtros, onVaga
     )
   }
 
-  if (loading) {
+  if (vagasLoading) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {clientesSelecionados.map((cliente) => (
@@ -231,11 +196,11 @@ export default function ComparativoVagas({ clientesSelecionados, filtros, onVaga
       <div className="bg-blue-50 p-4 rounded-lg">
         <div className="flex flex-wrap gap-4 text-sm">
           {clientesSelecionados.map((cliente) => {
-            const vagas = vagasPorCliente[cliente] || []
+            const vagasDoCliente = vagasPorCliente[cliente] || []
             return (
               <div key={cliente} className="text-blue-800">
                 <span className="font-semibold">{cliente}:</span>{' '}
-                {vagas.length} {vagas.length === 1 ? 'vaga' : 'vagas'}
+                {vagasDoCliente.length} {vagasDoCliente.length === 1 ? 'vaga' : 'vagas'}
               </div>
             )
           })}
@@ -245,7 +210,7 @@ export default function ComparativoVagas({ clientesSelecionados, filtros, onVaga
       {/* Grid de comparação em 3 colunas */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {clientesSelecionados.map((cliente) => {
-          const vagas = vagasPorCliente[cliente] || []
+          const vagasDoCliente = vagasPorCliente[cliente] || []
           
           return (
             <div key={cliente} className="space-y-4">
@@ -256,7 +221,7 @@ export default function ComparativoVagas({ clientesSelecionados, filtros, onVaga
                   {cliente}
                 </h3>
                 <p className="text-blue-100 text-sm">
-                  {vagas.length} {vagas.length === 1 ? 'vaga encontrada' : 'vagas encontradas'}
+                  {vagasDoCliente.length} {vagasDoCliente.length === 1 ? 'vaga encontrada' : 'vagas encontradas'}
                 </p>
               </div>
               
@@ -284,13 +249,13 @@ export default function ComparativoVagas({ clientesSelecionados, filtros, onVaga
 
                     {isExpanded && (
                       <div className="px-4 pb-4 border-t border-gray-100">
-                        {vagas.length === 0 ? (
+                        {vagasDoCliente.length === 0 ? (
                           <p className="text-gray-500 text-sm py-2">
                             Nenhuma vaga encontrada
                           </p>
                         ) : (
                           <div className="space-y-3 mt-3">
-                            {vagas.map((vaga, index) => {
+                            {vagasDoCliente.map((vaga, index) => {
                               const conteudo = vaga[secao.key]
                               
                               return (

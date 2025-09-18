@@ -1,69 +1,165 @@
 'use client'
 
-import { useState, useEffect  } from 'react'
-import { supabase  } from '../lib/supabase'
-import { TrashIcon, PencilIcon  } from '@heroicons/react/24/outline'
+import { useState, useEffect, useCallback } from 'react'
+import { supabase } from '../lib/supabase'
+import { TrashIcon, PencilIcon } from '@heroicons/react/24/outline'
+import { useUsersCache } from '../hooks/useSupabaseCache'
+import { useAuth } from '../contexts/AuthContext'
 
-
-
-export default function ListaUsuarios() {
-  const [users, setUsers] = useState([])
-  const [loading, setLoading] = useState(true)
+// Novo componente de modal para edição de usuário
+function EditarUsuarioModal({ user, isOpen, onClose, onSave }) {
+  const [formData, setFormData] = useState({
+    name: user?.name || '',
+    role: user?.role || 'RH'
+  })
+  const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
   useEffect(() => {
-    loadUsers()
-  }, [])
+    if (user) {
+      setFormData({
+        name: user.name || '',
+        role: user.role || 'RH'
+      })
+    }
+  }, [user])
 
-  const loadUsers = async () => {
+  const handleChange = (e) => {
+    const { name, value } = e.target
+    setFormData(prev => ({ ...prev, [name]: value }))
+  }
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    setLoading(true)
+    setError('')
+
     try {
-      // Verificar se o usuário está autenticado
-      const { data: { user } } = await supabase.auth.getUser()
-      
-      if (!user) {
-        setError('Usuário não autenticado')
-        setLoading(false)
-        return
-      }
-
-      // Verificar se o usuário tem permissão de ADMIN
-      const { data: profile, error: profileError } = await supabase
-        .from('users')
-        .select('role')
-        .eq('email', user.email)
-        .single()
-
-      if (profileError) {
-        setError('Erro ao verificar permissões do usuário')
-        console.error(profileError)
-        setLoading(false)
-        return
-      }
-
-      if (profile?.role !== 'ADMIN') {
-        setError('Acesso negado. Apenas administradores podem visualizar a lista de usuários.')
-        setLoading(false)
-        return
-      }
-
-      const { data, error } = await supabase
-        .from('users')
-        .select('*')
-        .order('created_at', { ascending: false })
-
-      if (error) {
-        setError('Erro ao carregar usuários: ' + error.message)
-        console.error('Erro detalhado:', error)
-      } else {
-        setUsers(data || [])
-      }
+      await onSave(user.id, formData)
+      onClose()
     } catch (err) {
-      setError('Erro interno do servidor: ' + err.message)
-      console.error('Erro interno:', err)
+      setError(err.message || 'Erro ao salvar usuário')
     } finally {
       setLoading(false)
     }
   }
+
+  if (!isOpen || !user) return null
+
+  return (
+    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+      <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-1/2 lg:w-1/3 shadow-lg rounded-md bg-white">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-lg font-medium text-gray-900">
+            Editar Usuário: {user.email}
+          </h3>
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600"
+          >
+            <XMarkIcon className="h-6 w-6" />
+          </button>
+        </div>
+
+        {error && (
+          <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+            {error}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+              Nome Completo
+            </label>
+            <input
+              type="text"
+              id="name"
+              name="name"
+              required
+              value={formData.name}
+              onChange={handleChange}
+              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="role" className="block text-sm font-medium text-gray-700">
+              Tipo de Usuário
+            </label>
+            <select
+              id="role"
+              name="role"
+              value={formData.role}
+              onChange={handleChange}
+              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="RH">RH</option>
+              <option value="ADMIN">Administrador</option>
+            </select>
+          </div>
+
+          <div className="flex justify-end space-x-3 pt-4">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+            >
+              {loading ? 'Salvando...' : 'Salvar'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
+
+export default function ListaUsuarios() {
+  const { data: users = [], loading, error: cacheError, refetch } = useUsersCache()
+  const { profile, updateUserProfile } = useAuth()
+  const [error, setError] = useState('')
+  const [editingUser, setEditingUser] = useState(null)
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+
+  useEffect(() => {
+    if (cacheError) {
+      setError('Erro ao carregar usuários: ' + cacheError.message)
+      console.error('Erro detalhado:', cacheError)
+    } else if (profile && profile.role !== 'ADMIN') {
+      setError('Acesso negado. Apenas administradores podem visualizar a lista de usuários.')
+    } else {
+      setError('')
+    }
+  }, [cacheError, profile])
+
+  const handleEdit = useCallback((user) => {
+    setEditingUser(user)
+    setIsEditModalOpen(true)
+  }, [])
+
+  const handleSaveEdit = useCallback(async (userId, updates) => {
+    try {
+      const { error: updateError } = await updateUserProfile(userId, updates)
+      if (updateError) throw new Error(updateError)
+      refetch() // Refetch para atualizar a lista após a edição
+    } catch (err) {
+      console.error('Erro ao salvar edição do usuário:', err)
+      throw err // Re-throw para o modal exibir o erro
+    }
+  }, [refetch, updateUserProfile])
+
+  const handleCloseEdit = useCallback(() => {
+    setEditingUser(null)
+    setIsEditModalOpen(false)
+  }, [])
 
   const deleteUser = async (userId, userEmail) => {
     if (!confirm(`Tem certeza que deseja excluir o usuário ${userEmail}?`)) {
@@ -71,20 +167,29 @@ export default function ListaUsuarios() {
     }
 
     try {
-      const { error } = await supabase
+      // Primeiro, tentar excluir o usuário da tabela 'users'
+      const { error: deleteProfileError } = await supabase
         .from('users')
         .delete()
         .eq('id', userId)
 
-      if (error) {
-        alert('Erro ao excluir usuário')
-        console.error(error)
-      } else {
-        setUsers(users.filter(user => user.id !== userId))
-        alert('Usuário excluído com sucesso')
+      if (deleteProfileError) {
+        alert('Erro ao excluir perfil do usuário: ' + deleteProfileError.message)
+        console.error(deleteProfileError)
+        return
       }
+
+      // Em seguida, tentar excluir o usuário do auth.users (se necessário e permitido)
+      // Nota: Excluir de auth.users pode ser restrito por RLS ou políticas do Supabase.
+      // Geralmente, a exclusão do perfil em 'public.users' é suficiente para a lógica da aplicação.
+      // Se a exclusão de auth.users for necessária, ela deve ser feita com uma chave de serviço
+      // ou através de uma Edge Function para segurança.
+      // Por enquanto, vamos focar na exclusão do perfil.
+
+      refetch() // Refetch para atualizar a lista após a exclusão
+      alert('Usuário excluído com sucesso')
     } catch (err) {
-      alert('Erro interno do servidor')
+      alert('Erro interno do servidor ao excluir usuário')
       console.error(err)
     }
   }
@@ -117,8 +222,7 @@ export default function ListaUsuarios() {
               <button
                 onClick={() => {
                   setError('')
-                  setLoading(true)
-                  loadUsers()
+                  refetch()
                 }}
                 className="bg-red-100 hover:bg-red-200 text-red-800 px-3 py-1 rounded text-sm font-medium"
               >
@@ -176,7 +280,7 @@ export default function ListaUsuarios() {
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
                 <button
-                  onClick={() => alert('Funcionalidade de edição em desenvolvimento')}
+                  onClick={() => handleEdit(user)}
                   className="text-blue-600 hover:text-blue-900 mr-2"
                   title="Editar usuário"
                 >
@@ -200,6 +304,13 @@ export default function ListaUsuarios() {
           Nenhum usuário encontrado
         </div>
       )}
+
+      <EditarUsuarioModal
+        user={editingUser}
+        isOpen={isEditModalOpen}
+        onClose={handleCloseEdit}
+        onSave={handleSaveEdit}
+      />
     </div>
   )
 }

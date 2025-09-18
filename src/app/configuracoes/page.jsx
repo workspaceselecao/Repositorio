@@ -1,24 +1,49 @@
 'use client'
 
-import { useState  } from 'react'
+import { useState } from 'react'
 import DashboardLayout from '../../components/DashboardLayout'
 import NovoUsuarioForm from '../../components/NovoUsuarioForm'
 import ListaUsuarios from '../../components/ListaUsuarios'
+import ExportExcel from '../../components/ExportExcel' // Importar ExportExcel
 import { PlusIcon, UserGroupIcon, ArrowDownTrayIcon, Cog6ToothIcon  } from '@heroicons/react/24/outline'
+import { useVagasCache } from '../../hooks/useSupabaseCache' // Para exportar todas as vagas
 
 export default function ConfiguracoesPage() {
   const [activeTab, setActiveTab] = useState<'usuarios' | 'backup' | 'sistema'>('usuarios')
   const [showNewUserForm, setShowNewUserForm] = useState(false)
+  const { data: allVagas = [] } = useVagasCache() // Carregar todas as vagas para backup
 
   const handleUserCreated = () => {
     setShowNewUserForm(false)
     // Forçar recarregamento da lista de usuários
-    window.location.reload()
+    // Em um cenário real, o refetch do useUsersCache seria chamado aqui
+    window.location.reload() 
   }
 
-  const handleBackup = () => {
-    alert('Funcionalidade de backup em desenvolvimento')
-  }
+  // A função handleBackup agora será substituída pelo componente ExportExcel
+  // const handleBackup = () => {
+  //   alert('Funcionalidade de backup em desenvolvimento')
+  // }
+
+  // Preparar dados para exportação de todas as vagas
+  const vagasParaExport = allVagas.map(vaga => ({
+    id: vaga.id,
+    cliente: vaga.cliente,
+    site: vaga.site,
+    categoria: vaga.categoria,
+    cargo: vaga.cargo,
+    produto: vaga.produto,
+    descricao: vaga.descricao_vaga || '',
+    responsabilidades: vaga.responsabilidades_atribuicoes || '',
+    requisitos: vaga.requisitos_qualificacoes || '',
+    beneficios: vaga.beneficios || '',
+    salario: vaga.salario || '',
+    localizacao: vaga.local_trabalho || '',
+    horario: vaga.horario_trabalho || '',
+    jornada: vaga.jornada_trabalho || '',
+    etapas: vaga.etapas_processo || '',
+    created_at: vaga.created_at
+  }));
 
   return (
     <DashboardLayout requiredRole="ADMIN">
@@ -35,13 +60,13 @@ export default function ConfiguracoesPage() {
               </p>
             </div>
             <div className="flex space-x-3">
-              <button
-                onClick={handleBackup}
+              {/* Botão de backup usando ExportExcel */}
+              <ExportExcel
+                vagas={vagasParaExport}
+                filename="backup-vagas-completo"
+                buttonText="Backup Completo (Excel)"
                 className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium flex items-center"
-              >
-                <ArrowDownTrayIcon className="h-4 w-4 mr-2" />
-                Backup
-              </button>
+              />
             </div>
           </div>
         </div>
@@ -127,12 +152,13 @@ export default function ConfiguracoesPage() {
                     <p>• Backup das configurações</p>
                     <p>• Histórico de backups realizados</p>
                   </div>
-                  <button
-                    onClick={handleBackup}
+                  {/* Botão de backup usando ExportExcel */}
+                  <ExportExcel
+                    vagas={vagasParaExport}
+                    filename="backup-vagas-completo"
+                    buttonText="Fazer Backup Agora"
                     className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium"
-                  >
-                    Fazer Backup
-                  </button>
+                  />
                 </div>
 
                 {/* Estatísticas do Sistema */}
@@ -144,7 +170,7 @@ export default function ConfiguracoesPage() {
                     Visualizar métricas e estatísticas do uso.
                   </p>
                   <div className="space-y-2 text-sm text-gray-600">
-                    <p>• Total de vagas cadastradas: Em breve</p>
+                    <p>• Total de vagas cadastradas: {allVagas.length}</p>
                     <p>• Usuários ativos no sistema: Em breve</p>
                     <p>• Relatórios de utilização: Em breve</p>
                   </div>

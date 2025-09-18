@@ -1,12 +1,11 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { supabase } from '../lib/supabase'
+import { useState, useEffect, useMemo } from 'react'
 
 export default function FiltrosComparativo({ 
   filtros, 
   onFiltrosChange, 
-  clientesSelecionados 
+  vagasDisponiveis // Receber as vagas já carregadas
 }) {
   const [opcoesFiltros, setOpcoesFiltros] = useState({
     sites: [],
@@ -14,32 +13,14 @@ export default function FiltrosComparativo({
     cargos: [],
     produtos: []
   })
-  const [loading, setLoading] = useState(false)
 
+  // Recalcular opções de filtro sempre que as vagas disponíveis mudarem
   useEffect(() => {
-    if (clientesSelecionados.length > 0) {
-      carregarOpcoesFiltros()
-    }
-  }, [clientesSelecionados])
-
-  const carregarOpcoesFiltros = async () => {
-    setLoading(true)
-    try {
-      const { data, error } = await supabase
-        .from('vagas')
-        .select('site, categoria, cargo, produto')
-        .in('cliente', clientesSelecionados)
-
-      if (error) {
-        console.error('Erro ao carregar opções de filtros:', error)
-        return
-      }
-
-      // Extrair valores únicos para cada campo
-      const sites = Array.from(new Set(data?.map(v => v.site).filter(Boolean) || []))
-      const categorias = Array.from(new Set(data?.map(v => v.categoria).filter(Boolean) || []))
-      const cargos = Array.from(new Set(data?.map(v => v.cargo).filter(Boolean) || []))
-      const produtos = Array.from(new Set(data?.map(v => v.produto).filter(Boolean) || []))
+    if (vagasDisponiveis.length > 0) {
+      const sites = Array.from(new Set(vagasDisponiveis?.map(v => v.site).filter(Boolean) || []))
+      const categorias = Array.from(new Set(vagasDisponiveis?.map(v => v.categoria).filter(Boolean) || []))
+      const cargos = Array.from(new Set(vagasDisponiveis?.map(v => v.cargo).filter(Boolean) || []))
+      const produtos = Array.from(new Set(vagasDisponiveis?.map(v => v.produto).filter(Boolean) || []))
 
       setOpcoesFiltros({
         sites: sites.sort(),
@@ -47,12 +28,15 @@ export default function FiltrosComparativo({
         cargos: cargos.sort(),
         produtos: produtos.sort()
       })
-    } catch (error) {
-      console.error('Erro ao carregar opções de filtros:', error)
-    } finally {
-      setLoading(false)
+    } else {
+      setOpcoesFiltros({
+        sites: [],
+        categorias: [],
+        cargos: [],
+        produtos: []
+      })
     }
-  }
+  }, [vagasDisponiveis])
 
   const handleFiltroChange = (campo, valor) => {
     onFiltrosChange({
@@ -70,11 +54,11 @@ export default function FiltrosComparativo({
     })
   }
 
-  if (loading) {
+  // Se não houver vagas disponíveis, não mostrar os filtros
+  if (vagasDisponiveis.length === 0) {
     return (
-      <div className="flex items-center justify-center p-4">
-        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-        <span className="ml-2 text-gray-600">Carregando filtros...</span>
+      <div className="text-center py-4 text-gray-500">
+        Nenhuma vaga para filtrar. Selecione clientes e aguarde o carregamento.
       </div>
     )
   }

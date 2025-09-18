@@ -3,11 +3,13 @@
 import { useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { ArrowDownTrayIcon, CheckCircleIcon, XCircleIcon } from '@heroicons/react/24/outline'
+import { useVagasCache } from '../hooks/useSupabaseCache'
 
 export default function ImportarDados() {
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState(null)
   const { user } = useAuth()
+  const { refetch: refetchVagas } = useVagasCache() // Obter a função refetch do cache de vagas
 
   const handleImport = async () => {
     if (!user) {
@@ -25,17 +27,15 @@ export default function ImportarDados() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${user.access_token}`
         },
-        body: JSON.stringify({ vagas: [] })
+        body: JSON.stringify({ vagas: [] }) // O corpo pode ser vazio se o JSON for lido do servidor
       })
 
       const data = await response.json()
       setResult(data)
 
       if (data.success) {
-        // Recarregar a página após sucesso para atualizar a lista
-        setTimeout(() => {
-          window.location.reload()
-        }, 3000)
+        // Em vez de recarregar a página, refetch os dados das vagas
+        refetchVagas()
       }
 
     } catch (error) {
