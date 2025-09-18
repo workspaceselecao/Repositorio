@@ -1,10 +1,13 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { supabase } from '../lib/supabase'
 
 export function EnvironmentDebug() {
   const [envVars, setEnvVars] = useState({})
   const [isClient, setIsClient] = useState(false)
+  const [testResults, setTestResults] = useState({})
+  const [isTesting, setIsTesting] = useState(false)
 
   useEffect(() => {
     setIsClient(true)
@@ -15,6 +18,40 @@ export function EnvironmentDebug() {
       nodeEnv: process.env.NODE_ENV
     })
   }, [])
+
+  const testConnection = async () => {
+    setIsTesting(true)
+    try {
+      // Testar conexão básica
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+      
+      // Testar login
+      const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
+        email: 'roberio.gomes@atento.com',
+        password: 'admin123'
+      })
+      
+      setTestResults({
+        connection: sessionError ? '❌' : '✅',
+        login: loginError ? '❌' : '✅',
+        loginError: loginError?.message || null,
+        sessionError: sessionError?.message || null
+      })
+      
+      // Fazer logout após teste
+      if (loginData) {
+        await supabase.auth.signOut()
+      }
+    } catch (error) {
+      setTestResults({
+        connection: '❌',
+        login: '❌',
+        error: error.message
+      })
+    } finally {
+      setIsTesting(false)
+    }
+  }
 
   if (!isClient) {
     return null
@@ -55,7 +92,37 @@ export function EnvironmentDebug() {
       </div>
       
       <div className="mt-2 pt-2 border-t border-gray-200">
-        <div className={`text-xs font-medium ${hasValidConfig ? 'text-green-600' : 'text-red-600'}`}>
+        <button
+          onClick={testConnection}
+          disabled={isTesting}
+          className="w-full bg-blue-500 text-white text-xs px-2 py-1 rounded hover:bg-blue-600 disabled:bg-gray-400"
+        >
+          {isTesting ? 'Testando...' : 'Testar Conexão'}
+        </button>
+        
+        {testResults.connection && (
+          <div className="mt-2 space-y-1">
+            <div className="flex justify-between">
+              <span>Conexão:</span>
+              <span className={testResults.connection === '✅' ? 'text-green-600' : 'text-red-600'}>
+                {testResults.connection}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span>Login:</span>
+              <span className={testResults.login === '✅' ? 'text-green-600' : 'text-red-600'}>
+                {testResults.login}
+              </span>
+            </div>
+            {testResults.loginError && (
+              <div className="text-red-600 text-xs">
+                Erro: {testResults.loginError}
+              </div>
+            )}
+          </div>
+        )}
+        
+        <div className={`text-xs font-medium mt-2 ${hasValidConfig ? 'text-green-600' : 'text-red-600'}`}>
           {hasValidConfig ? '✅ Configuração OK' : '❌ Configuração Inválida'}
         </div>
         
