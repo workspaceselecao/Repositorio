@@ -1,6 +1,7 @@
 import { useCallback  } from 'react'
 import { supabase  } from '../lib/supabase'
 import { useCache  } from './useCache'
+import { useAuth } from '../contexts/AuthContext' // Importar useAuth
 
 // Cache keys constants
 export const CACHE_KEYS = {
@@ -13,7 +14,9 @@ export const CACHE_KEYS = {
 }
 
 export function useVagasCache(options = {}) {
+  const { user } = useAuth(); // Obter usuário do AuthContext
   const fetcher = useCallback(async () => {
+    if (!user) return []; // Não buscar se não estiver autenticado
     const { data, error } = await supabase
       .from('vagas')
       .select('*')
@@ -21,7 +24,7 @@ export function useVagasCache(options = {}) {
 
     if (error) throw error
     return data || []
-  }, [])
+  }, [user]) // Adicionar user às dependências
 
   return useCache(CACHE_KEYS.VAGAS, fetcher, {
     ttl: 2 * 60 * 1000, // 2 minutes
@@ -30,7 +33,9 @@ export function useVagasCache(options = {}) {
 }
 
 export function useClientesCache(options = {}) {
+  const { user } = useAuth(); // Obter usuário do AuthContext
   const fetcher = useCallback(async () => {
+    if (!user) return []; // Não buscar se não estiver autenticado
     const { data, error } = await supabase
       .from('vagas')
       .select('cliente')
@@ -48,7 +53,7 @@ export function useClientesCache(options = {}) {
     return Object.entries(clientesMap)
       .map(([nome, totalVagas]) => ({ nome, totalVagas }))
       .sort((a, b) => a.nome.localeCompare(b.nome))
-  }, [])
+  }, [user]) // Adicionar user às dependências
 
   return useCache(CACHE_KEYS.CLIENTES, fetcher, {
     ttl: 5 * 60 * 1000, // 5 minutes
@@ -57,7 +62,9 @@ export function useClientesCache(options = {}) {
 }
 
 export function useSitesCache(options = {}) {
+  const { user } = useAuth(); // Obter usuário do AuthContext
   const fetcher = useCallback(async () => {
+    if (!user) return []; // Não buscar se não estiver autenticado
     const { data, error } = await supabase
       .from('vagas')
       .select('site')
@@ -68,7 +75,7 @@ export function useSitesCache(options = {}) {
     // Get unique sites
     const sites = Array.from(new Set((data || []).map(v => v.site))).sort()
     return sites
-  }, [])
+  }, [user]) // Adicionar user às dependências
 
   return useCache(CACHE_KEYS.SITES, fetcher, {
     ttl: 5 * 60 * 1000, // 5 minutes
@@ -77,7 +84,9 @@ export function useSitesCache(options = {}) {
 }
 
 export function useUsersCache(options = {}) {
+  const { user } = useAuth(); // Obter usuário do AuthContext
   const fetcher = useCallback(async () => {
+    if (!user) return []; // Não buscar se não estiver autenticado
     const { data, error } = await supabase
       .from('users')
       .select('*')
@@ -85,7 +94,7 @@ export function useUsersCache(options = {}) {
 
     if (error) throw error
     return data || []
-  }, [])
+  }, [user]) // Adicionar user às dependências
 
   return useCache(CACHE_KEYS.USERS, fetcher, {
     ttl: 10 * 60 * 1000, // 10 minutes
@@ -97,9 +106,10 @@ export function useVagasByClienteCache(
   clientes,
   options = {}
 ) {
+  const { user } = useAuth(); // Obter usuário do AuthContext
   const fetcher = useCallback(async () => {
-    if (clientes.length === 0) return []
-
+    if (!user || clientes.length === 0) return []; // Não buscar se não estiver autenticado ou sem clientes
+    
     const { data, error } = await supabase
       .from('vagas')
       .select('*')
@@ -108,8 +118,8 @@ export function useVagasByClienteCache(
 
     if (error) throw error
     return data || []
-  }, [clientes])
-
+  }, [clientes, user]) // Adicionar user às dependências
+  
   const cacheKey = CACHE_KEYS.VAGAS_BY_CLIENTE(clientes.sort().join(','))
   
   return useCache(cacheKey, fetcher, {
