@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { supabase } from '../../lib/supabase'
+import { useAuth } from '../../contexts/AuthContext'
 import { PublicRoute } from '../../components/ProtectedRoute'
 
 export default function LoginPage() {
@@ -11,6 +11,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const router = useRouter()
+  const { signIn, isRedirecting } = useAuth()
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -18,22 +19,21 @@ export default function LoginPage() {
     setError('')
 
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      })
+      const { data, error } = await signIn(email, password)
 
       if (error) {
         setError(error.message)
+        setLoading(false)
         return
       }
 
       if (data.user) {
-        router.push('/dashboard')
+        // O redirecionamento será feito pelo PublicRoute
+        // Aguardar o estado de redirecionamento
+        setLoading(false)
       }
     } catch (err) {
       setError('Erro interno. Tente novamente.')
-    } finally {
       setLoading(false)
     }
   }
@@ -84,10 +84,10 @@ export default function LoginPage() {
 
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || isRedirecting}
             className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-gray-400"
           >
-            {loading ? 'Entrando...' : 'Entrar'}
+            {loading ? 'Entrando...' : isRedirecting ? 'Redirecionando...' : 'Entrar'}
           </button>
         </form>
       </div>

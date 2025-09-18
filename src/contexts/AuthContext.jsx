@@ -8,6 +8,7 @@ const AuthContext = createContext(undefined)
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [isRedirecting, setIsRedirecting] = useState(false)
 
   useEffect(() => {
     // Verificar sessão inicial
@@ -31,10 +32,21 @@ export function AuthProvider({ children }) {
   }, [])
 
   const signIn = async (email, password) => {
+    setIsRedirecting(true)
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     })
+    
+    if (data?.user) {
+      // Aguardar um pouco para garantir que os dados sejam carregados
+      setTimeout(() => {
+        setIsRedirecting(false)
+      }, 1000)
+    } else {
+      setIsRedirecting(false)
+    }
+    
     return { data, error }
   }
 
@@ -45,6 +57,7 @@ export function AuthProvider({ children }) {
   const value = {
     user,
     loading,
+    isRedirecting,
     signIn,
     signOut,
   }

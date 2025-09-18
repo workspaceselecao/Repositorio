@@ -43,7 +43,7 @@ export default function DashboardPage() {
                           Total de Vagas
                         </dt>
                         <dd className="text-lg font-medium text-gray-900">
-                          {vagasLoading ? 'Carregando...' : totalVagas}
+                          {loading ? 'Carregando...' : totalVagas}
                         </dd>
                       </dl>
                     </div>
@@ -65,7 +65,7 @@ export default function DashboardPage() {
                           Clientes Ativos
                         </dt>
                         <dd className="text-lg font-medium text-gray-900">
-                          {clientesLoading ? 'Carregando...' : totalClientes}
+                          {loading ? 'Carregando...' : totalClientes}
                         </dd>
                       </dl>
                     </div>
