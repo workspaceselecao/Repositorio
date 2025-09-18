@@ -8,8 +8,9 @@ export default function DashboardPage() {
   const { data: vagas = [], loading: vagasLoading } = useVagasCache()
   const { data: clientes = [], loading: clientesLoading } = useClientesCache()
 
-  const totalVagas = useMemo(() => vagas.length, [vagas])
-  const totalClientes = useMemo(() => clientes.length, [clientes])
+  // Garantir que vagas e clientes sejam arrays antes de acessar .length
+  const totalVagas = useMemo(() => (vagas || []).length, [vagas])
+  const totalClientes = useMemo(() => (clientes || []).length, [clientes])
 
   return (
     <DashboardLayout>
