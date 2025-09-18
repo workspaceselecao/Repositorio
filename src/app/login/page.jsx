@@ -18,7 +18,11 @@ export default function LoginPage() {
     setError('')
 
     try {
-      await signIn(email, password)
+      const result = await signIn(email, password)
+      if (result.error) {
+        setError(result.error)
+        return
+      }
       router.push('/dashboard')
     } catch (err) {
       setError('Email ou senha inválidos')

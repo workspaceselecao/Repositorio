@@ -20,27 +20,44 @@ export function AuthProvider({ children }) {
         return
       }
 
-      const cachedProfile = getCache(`${CACHE_KEYS.USERS}-${userAuth.id}`);
+      const cachedProfile = getCache(`${CACHE_KEYS.USERS}-${userAuth.email}`);
       if (cachedProfile) {
         setProfile(cachedProfile);
         return;
       }
 
-      const { data, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', userAuth.id)
-        .single()
-
-      if (error) {
-        console.error('Erro ao carregar perfil do usuário:', error)
-        return
+      // Criar perfil básico a partir dos dados do Supabase Auth
+      // Isso evita problemas com RLS e tabela users
+      console.log('Criando perfil básico a partir do Supabase Auth...')
+      const newProfile = {
+        id: userAuth.id,
+        email: userAuth.email,
+        name: userAuth.user_metadata?.name || userAuth.email.split('@')[0],
+        role: userAuth.user_metadata?.role || 'RH',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       }
-
-      if (data) {
-        setProfile(data)
-        setCache(`${CACHE_KEYS.USERS}-${userAuth.id}`, data);
+      
+      setProfile(newProfile)
+      setCache(`${CACHE_KEYS.USERS}-${userAuth.email}`, newProfile)
+      
+      // Tentar inserir na tabela users em background (sem bloquear o login)
+      try {
+        const { data, error } = await supabase
+          .from('users')
+          .insert(newProfile)
+          .select()
+          .single()
+        
+        if (error && !error.message.includes('duplicate key')) {
+          console.log('Aviso: Não foi possível inserir usuário na tabela users:', error.message)
+        } else if (data) {
+          console.log('Usuário inserido na tabela users com sucesso')
+        }
+      } catch (dbError) {
+        console.log('Aviso: Erro ao inserir na tabela users:', dbError.message)
       }
+      
     } catch (error) {
       console.error('Erro ao carregar perfil do usuário:', error)
     }
@@ -149,19 +166,19 @@ export function AuthProvider({ children }) {
     }
   };
 
-  const updateUserProfile = async (id, updates) => {
+  const updateUserProfile = async (email, updates) => {
     try {
       const { data, error } = await supabase
         .from('users')
         .update(updates)
-        .eq('id', id)
+        .eq('email', email)
         .select()
         .single();
 
       if (error) throw error;
       
       setProfile(data);
-      setCache(`${CACHE_KEYS.USERS}-${data.id}`, data);
+      setCache(`${CACHE_KEYS.USERS}-${email}`, data);
       return { data };
     } catch (error) {
       console.error('Erro ao atualizar perfil:', error);

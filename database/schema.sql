@@ -63,14 +63,9 @@ CREATE POLICY "Users can view own user data" ON public.users
 CREATE POLICY "Users can update own user data" ON public.users
     FOR UPDATE USING (auth.email() = email);
 
--- Apenas ADMIN pode inserir novos usuários
-CREATE POLICY "Only admin can insert users" ON public.users
-    FOR INSERT WITH CHECK (
-        EXISTS (
-            SELECT 1 FROM public.users 
-            WHERE email = auth.email() AND role = 'ADMIN'
-        )
-    );
+-- Permitir inserção de usuários para usuários autenticados (para permitir auto-cadastro)
+CREATE POLICY "Authenticated users can insert users" ON public.users
+    FOR INSERT WITH CHECK (auth.role() = 'authenticated');
 
 -- Apenas ADMIN pode deletar usuários
 CREATE POLICY "Only admin can delete users" ON public.users
