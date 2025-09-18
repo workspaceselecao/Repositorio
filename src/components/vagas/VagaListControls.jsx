@@ -14,20 +14,20 @@ export default function VagaListControls({
   return (
     <div className="bg-blue-50 p-4 rounded-lg">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <p className="text-blue-800">
-          Mostrando <span className="font-semibold">{totalItems}</span> vagas
+        <p className="text-blue-900 font-medium">
+          Mostrando <span className="font-bold text-blue-950">{totalItems}</span> vagas
           {totalItems !== totalVagasRaw && (
-            <span className="text-blue-600"> (filtradas de {totalVagasRaw} total)</span>
+            <span className="text-blue-700 font-medium"> (filtradas de {totalVagasRaw} total)</span>
           )}
         </p>
 
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
-            <label className="text-sm text-blue-700">Visualização:</label>
+            <label className="text-sm font-semibold text-blue-900">Visualização:</label>
             <select
               value={viewMode}
               onChange={(e) => setViewMode(e.target.value)}
-              className="px-2 py-1 border border-blue-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="px-2 py-1 border border-blue-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white font-medium"
             >
               <option value="expanded">Expandida (1 por linha)</option>
               <option value="paginated">Paginada</option>
@@ -45,11 +45,11 @@ export default function VagaListControls({
 
           {(viewMode === 'paginated' || viewMode === 'expanded') && (
             <div className="flex items-center gap-2">
-              <label className="text-sm text-blue-700">Itens por página:</label>
+              <label className="text-sm font-semibold text-blue-900">Itens por página:</label>
               <select
                 value={itemsPerPage}
                 onChange={(e) => setItemsPerPage(Number(e.target.value))}
-                className="px-2 py-1 border border-blue-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="px-2 py-1 border border-blue-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white font-medium"
               >
                 <option value={3}>3</option>
                 <option value={6}>6</option>

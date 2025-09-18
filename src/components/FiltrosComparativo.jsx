@@ -68,13 +68,13 @@ export default function FiltrosComparativo({
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Filtro por Site */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-semibold text-gray-900 mb-1">
             Site
           </label>
           <select
             value={filtros.site || ''}
             onChange={(e) => handleFiltroChange('site', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white"
           >
             <option value="">Todos os sites</option>
             {opcoesFiltros.sites.map(site => (
@@ -85,13 +85,13 @@ export default function FiltrosComparativo({
 
         {/* Filtro por Categoria */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-semibold text-gray-900 mb-1">
             Categoria
           </label>
           <select
             value={filtros.categoria || ''}
             onChange={(e) => handleFiltroChange('categoria', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white"
           >
             <option value="">Todas as categorias</option>
             {opcoesFiltros.categorias.map(categoria => (
@@ -102,13 +102,13 @@ export default function FiltrosComparativo({
 
         {/* Filtro por Cargo */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-semibold text-gray-900 mb-1">
             Cargo
           </label>
           <select
             value={filtros.cargo || ''}
             onChange={(e) => handleFiltroChange('cargo', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white"
           >
             <option value="">Todos os cargos</option>
             {opcoesFiltros.cargos.map(cargo => (
@@ -119,13 +119,13 @@ export default function FiltrosComparativo({
 
         {/* Filtro por Produto */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-semibold text-gray-900 mb-1">
             Produto
           </label>
           <select
             value={filtros.produto || ''}
             onChange={(e) => handleFiltroChange('produto', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white"
           >
             <option value="">Todos os produtos</option>
             {opcoesFiltros.produtos.map(produto => (
@@ -139,7 +139,7 @@ export default function FiltrosComparativo({
       <div className="flex justify-end">
         <button
           onClick={limparFiltros}
-          className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-md transition-colors"
+          className="px-4 py-2 text-sm font-semibold text-gray-800 hover:text-gray-900 hover:bg-gray-100 bg-gray-50 rounded-md transition-colors border border-gray-200"
         >
           Limpar Filtros
         </button>
