@@ -3,6 +3,7 @@ import { AuthProvider  } from '../contexts/AuthContext'
 import { DataProvider  } from '../contexts/DataContext'
 import { ErrorBoundary  } from '../components/ErrorBoundary'
 import { EnvironmentCheck  } from '../components/EnvironmentCheck'
+import NavigationDebug from '../components/NavigationDebug'
 
 export const metadata = {
   title: 'Repositório de Vagas',
@@ -35,6 +36,7 @@ export default function RootLayout({
                 <AuthProvider>
                   <DataProvider>
                     {children}
+                    <NavigationDebug />
                   </DataProvider>
                 </AuthProvider>
           </EnvironmentCheck>

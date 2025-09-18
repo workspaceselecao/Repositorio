@@ -25,6 +25,11 @@ export function DataProvider({ children }) {
       return
     }
 
+    // Evitar carregamento desnecessário se já estiver carregando
+    if (data.loading) {
+      return
+    }
+
     try {
       setData(prev => ({ ...prev, loading: true }))
 
@@ -73,7 +78,7 @@ export function DataProvider({ children }) {
       console.error('Erro ao carregar dados:', error)
       setData(prev => ({ ...prev, loading: false }))
     }
-  }, [user])
+  }, [user, data.loading])
 
   // Função para invalidar cache
   const invalidateCache = useCallback(() => {
@@ -160,14 +165,14 @@ export function DataProvider({ children }) {
   // Carregar dados quando o usuário mudar
   useEffect(() => {
     loadAllData()
-  }, [loadAllData])
+  }, [user]) // Usar apenas user como dependência para evitar loops
 
   // Recarregar dados quando a versão do cache mudar
   useEffect(() => {
     if (cacheVersion > 0) {
       loadAllData()
     }
-  }, [cacheVersion, loadAllData])
+  }, [cacheVersion]) // Usar apenas cacheVersion como dependência
 
   // Configurar atualizações em tempo real
   useEffect(() => {

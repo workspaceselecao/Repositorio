@@ -42,15 +42,15 @@ export function usePerformanceMetrics() {
     return JSON.stringify(metrics, null, 2)
   }, [metrics])
 
-  // Monitorar render times
-  useEffect(() => {
-    renderStartTime.current = performance.now()
-  })
+  // Monitorar render times - removido para evitar re-renderizações infinitas
+  // useEffect(() => {
+  //   renderStartTime.current = performance.now()
+  // })
 
-  useEffect(() => {
-    const renderTime = performance.now() - renderStartTime.current
-    addMetric('component-render', renderTime, 'render')
-  })
+  // useEffect(() => {
+  //   const renderTime = performance.now() - renderStartTime.current
+  //   addMetric('component-render', renderTime, 'render')
+  // })
 
   return {
     metrics,

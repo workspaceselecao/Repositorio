@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useAuth } from '../contexts/AuthContext'
+import { useNavigation } from '../hooks/useNavigation'
 import {
   HomeIcon,
   UserGroupIcon,
@@ -27,7 +28,9 @@ export default function Sidebar({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const { profile, signOut } = useAuth()
+  const { navigate } = useNavigation()
   const pathname = usePathname()
+  const [lastClickTime, setLastClickTime] = useState(0)
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen)
@@ -50,6 +53,16 @@ export default function Sidebar({ children }) {
       return pathname === '/dashboard'
     }
     return pathname.startsWith(href)
+  }
+
+  const handleNavigation = (href) => {
+    const now = Date.now()
+    if (now - lastClickTime < 500) {
+      console.log('Navigation debounced, ignoring click')
+      return
+    }
+    setLastClickTime(now)
+    navigate(href)
   }
 
   return (
@@ -85,14 +98,14 @@ export default function Sidebar({ children }) {
 
             const isCurrent = isActive(item.href)
             return (
-              <Link
+              <button
                 key={item.name}
-                href={item.href}
+                onClick={() => handleNavigation(item.href)}
                 className={`${
                   isCurrent
                     ? 'bg-blue-50 text-blue-700 border-r-2 border-blue-700'
                     : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                } group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors duration-150`}
+                } group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors duration-150 w-full text-left`}
               >
                 <item.icon
                   className={`${
@@ -100,7 +113,7 @@ export default function Sidebar({ children }) {
                   } h-5 w-5 mr-3 flex-shrink-0`}
                 />
                 {sidebarOpen && <span className="truncate">{item.name}</span>}
-              </Link>
+              </button>
             )
           })}
         </nav>

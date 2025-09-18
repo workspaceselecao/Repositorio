@@ -2,19 +2,19 @@
 
 import { useAuth } from '../contexts/AuthContext'
 import { useData } from '../contexts/DataContext'
-import { useRouter } from 'next/navigation'
+import { useNavigation } from '../hooks/useNavigation'
 import { useEffect } from 'react'
 
 export function ProtectedRoute({ children }) {
   const { user, loading, isRedirecting } = useAuth()
   const { loading: dataLoading } = useData()
-  const router = useRouter()
+  const { navigate } = useNavigation()
 
   useEffect(() => {
     if (!loading && !user) {
-      router.push('/login')
+      navigate('/login')
     }
-  }, [user, loading, router])
+  }, [user, loading, navigate])
 
   // Mostrar loading enquanto está autenticando ou carregando dados
   if (loading || isRedirecting || dataLoading) {
@@ -39,13 +39,13 @@ export function ProtectedRoute({ children }) {
 
 export function PublicRoute({ children }) {
   const { user, loading, isRedirecting } = useAuth()
-  const router = useRouter()
+  const { navigate } = useNavigation()
 
   useEffect(() => {
     if (!loading && !isRedirecting && user) {
-      router.push('/dashboard')
+      navigate('/dashboard')
     }
-  }, [user, loading, isRedirecting, router])
+  }, [user, loading, isRedirecting, navigate])
 
   if (loading || isRedirecting) {
     return (
