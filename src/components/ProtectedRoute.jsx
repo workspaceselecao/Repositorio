@@ -1,8 +1,8 @@
 'use client'
 
-import { useAuth  } from '../contexts/AuthContext'
-import { useRouter  } from 'next/navigation'
-import { useEffect  } from 'react'
+import { useAuth } from '../contexts/AuthContext'
+import { useRouter } from 'next/navigation'
+import { useEffect, useRef } from 'react'
 
 export function ProtectedRoute({ 
   children, 
@@ -11,50 +11,49 @@ export function ProtectedRoute({
 }) {
   const { user, profile, loading } = useAuth()
   const router = useRouter()
+  const hasRedirected = useRef(false)
 
   useEffect(() => {
-    console.log('ProtectedRoute - Effect triggered:', { user: !!user, profile: !!profile, loading, requiredRole, redirectTo });
+    // Evitar múltiplos redirecionamentos
+    if (hasRedirected.current) return
 
     if (!loading) {
       if (!user) {
-        console.log('ProtectedRoute: Nenhum usuário autenticado, redirecionando para login.');
-        router.push(redirectTo);
-        return;
-      }
-
-      // Se o usuário existe, mas o perfil ainda não foi carregado, aguarde.
-      // Isso pode acontecer se loadUserProfile levar um momento.
-      if (!profile) {
-        console.log('ProtectedRoute: Usuário autenticado, mas perfil ainda não carregado. Aguardando...');
-        return; 
+        hasRedirected.current = true
+        router.push(redirectTo)
+        return
       }
 
       if (requiredRole && profile?.role !== requiredRole) {
-        console.log(`ProtectedRoute: A função do usuário (${profile?.role}) não corresponde à função exigida (${requiredRole}), redirecionando para o dashboard.`);
-        router.push('/dashboard');
-        return;
+        hasRedirected.current = true
+        router.push('/dashboard')
+        return
       }
-      console.log('ProtectedRoute: Usuário autenticado e autorizado.');
-    } else {
-      console.log('ProtectedRoute: Ainda carregando o estado de autenticação. Aguardando...');
     }
-  }, [user, profile, loading, requiredRole, redirectTo, router]);
+  }, [user, profile, loading, requiredRole, redirectTo, router])
+
+  // Reset do flag quando o usuário muda
+  useEffect(() => {
+    hasRedirected.current = false
+  }, [user])
 
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500"></div>
       </div>
-    );
+    )
   }
 
-  // Se não houver usuário ou o perfil não corresponder à função exigida, não renderize o conteúdo protegido.
-  // O useEffect já deve ter tratado o redirecionamento.
-  if (!user || (requiredRole && profile?.role !== requiredRole)) {
-    return null;
+  if (!user) {
+    return null
   }
 
-  return <>{children}</>;
+  if (requiredRole && profile?.role !== requiredRole) {
+    return null
+  }
+
+  return <>{children}</>
 }
 
 export function PublicRoute({ 
@@ -63,32 +62,34 @@ export function PublicRoute({
 }) {
   const { user, loading } = useAuth()
   const router = useRouter()
+  const hasRedirected = useRef(false)
 
   useEffect(() => {
-    console.log('PublicRoute - Effect triggered:', { user: !!user, loading, redirectTo });
+    // Evitar múltiplos redirecionamentos
+    if (hasRedirected.current) return
+
     if (!loading && user) {
-      console.log('PublicRoute: Usuário autenticado, redirecionando para o dashboard.');
-      router.push(redirectTo);
-    } else if (!loading && !user) {
-      console.log('PublicRoute: Nenhum usuário, permanecendo na página pública.');
-    } else {
-      console.log('PublicRoute: Ainda carregando o estado de autenticação. Aguardando...');
+      hasRedirected.current = true
+      router.push(redirectTo)
     }
-  }, [user, loading, redirectTo, router]);
+  }, [user, loading, redirectTo, router])
+
+  // Reset do flag quando o usuário muda
+  useEffect(() => {
+    hasRedirected.current = false
+  }, [user])
 
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500"></div>
       </div>
-    );
+    )
   }
 
-  // Se houver usuário autenticado, não renderize o conteúdo público.
-  // O useEffect já deve ter tratado o redirecionamento.
   if (user) {
-    return null;
+    return null
   }
 
-  return <>{children}</>;
+  return <>{children}</>
 }

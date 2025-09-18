@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useEffect, useState, useCallback } from 'react'
+import { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react'
 import { supabase } from '../lib/supabase'
 import { useCacheManager } from '../hooks/useCache'
 import { CACHE_KEYS } from '../hooks/useSupabaseCache'
@@ -99,43 +99,41 @@ export function AuthProvider({ children }) {
     return () => subscription.unsubscribe();
   }, [loadUserProfile, setCache]);
 
-  const signIn = async (email, password) => {
+  const signIn = useCallback(async (email, password) => {
     try {
-      setLoading(true); // Define loading como true durante a tentativa de login
+      setLoading(true);
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (error) {
-        setLoading(false); // Reseta loading em caso de erro
+        setLoading(false);
         return { error: error.message };
       }
 
-      // Se o login for bem-sucedido, atualiza explicitamente o usuário e carrega o perfil
-      // O listener onAuthStateChange também deve capturar isso, mas isso garante uma atualização imediata
       if (data.user) {
         setUser(data.user);
         await loadUserProfile(data.user);
       }
       
-      setLoading(false); // Reseta loading após login bem-sucedido
+      setLoading(false);
       return {};
     } catch (error) {
-      setLoading(false); // Reseta loading em caso de qualquer erro interno
+      setLoading(false);
       return { error: 'Erro interno do servidor' };
     }
-  };
+  }, [loadUserProfile]);
 
-  const signOut = async () => {
-    setLoading(true); // Define loading como true durante o logout
+  const signOut = useCallback(async () => {
+    setLoading(true);
     await supabase.auth.signOut();
-    setLoading(false); // Reseta loading após o logout
-  };
+    setLoading(false);
+  }, []);
 
-  const signUp = async (email, password, name, role) => {
+  const signUp = useCallback(async (email, password, name, role) => {
     try {
-      setLoading(true); // Define loading como true durante a tentativa de cadastro
+      setLoading(true);
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
@@ -148,7 +146,7 @@ export function AuthProvider({ children }) {
       });
 
       if (authError) {
-        setLoading(false); // Reseta loading em caso de erro
+        setLoading(false);
         return { error: authError.message };
       }
 
@@ -157,15 +155,15 @@ export function AuthProvider({ children }) {
         await loadUserProfile(authData.user);
       }
       
-      setLoading(false); // Reseta loading após cadastro bem-sucedido
+      setLoading(false);
       return {};
     } catch (error) {
-      setLoading(false); // Reseta loading em caso de qualquer erro interno
+      setLoading(false);
       return { error: 'Erro interno do servidor' };
     }
-  };
+  }, [loadUserProfile]);
 
-  const updateUserProfile = async (email, updates) => {
+  const updateUserProfile = useCallback(async (email, updates) => {
     try {
       const { data, error } = await supabase
         .from('users')
@@ -183,9 +181,9 @@ export function AuthProvider({ children }) {
       console.error('Erro ao atualizar perfil:', error);
       return { error: error.message };
     }
-  };
+  }, [setCache]);
 
-  const value = {
+  const value = useMemo(() => ({
     user,
     profile,
     loading,
@@ -193,7 +191,7 @@ export function AuthProvider({ children }) {
     signOut,
     signUp,
     updateUserProfile,
-  };
+  }), [user, profile, loading, signIn, signOut, signUp, updateUserProfile]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
