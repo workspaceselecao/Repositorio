@@ -2,14 +2,14 @@
 
 import { useState, useEffect, useCallback, useMemo  } from 'react'
 import { XMarkIcon, CheckIcon  } from '@heroicons/react/24/outline'
-import { useData } from '../contexts/DataContext'
+import { useCache } from '../contexts/CacheContext'
 
 export default function SeletorClientes({ 
   clientesSelecionados, 
   onClientesChange, 
   maxClientes = 3 
 }) {
-  const { clientes, loading: clientesLoading } = useData()
+  const { clientes, loading: clientesLoading, isLoaded } = useCache()
 
   const toggleCliente = useCallback((cliente) => {
     if (clientesSelecionados.includes(cliente)) {

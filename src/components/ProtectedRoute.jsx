@@ -1,13 +1,13 @@
 'use client'
 
 import { useAuth } from '../contexts/AuthContext'
-import { useData } from '../contexts/DataContext'
+import { useCache } from '../contexts/CacheContext'
 import { useNavigation } from '../hooks/useNavigation'
 import { useEffect } from 'react'
 
 export function ProtectedRoute({ children }) {
   const { user, loading, isRedirecting } = useAuth()
-  const { loading: dataLoading } = useData()
+  const { loading: dataLoading, isLoaded } = useCache()
   const { navigate } = useNavigation()
 
   useEffect(() => {

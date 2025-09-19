@@ -9,7 +9,7 @@ import SeletorClientes from '../../components/SeletorClientes'
 import ComparativoVagas from '../../components/ComparativoVagas'
 import FiltrosComparativo from '../../components/FiltrosComparativo'
 import ExportExcel from '../../components/ExportExcel'
-import { useData } from '../../contexts/DataContext'
+import { useCache } from '../../contexts/CacheContext'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card'
 import { Button } from '../../components/ui/button'
 import { Badge } from '../../components/ui/badge'
@@ -40,6 +40,7 @@ import {
 } from '@heroicons/react/24/outline'
 
 export default function ComparativoPage() {
+  const { vagas, clientes, loading, isLoaded } = useCache()
   const [clientesSelecionados, setClientesSelecionados] = useState([])
   const [filtros, setFiltros] = useState({
     site: '',
