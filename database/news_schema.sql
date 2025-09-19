@@ -42,35 +42,17 @@ CREATE POLICY "Anyone can read active news" ON news
 CREATE POLICY "Authenticated users can insert news" ON news
   FOR INSERT WITH CHECK (auth.role() = 'authenticated');
 
--- Política: Apenas administradores podem atualizar notícias
-CREATE POLICY "Admins can update news" ON news
-  FOR UPDATE USING (
-    EXISTS (
-      SELECT 1 FROM profiles 
-      WHERE profiles.id = auth.uid() 
-      AND profiles.role = 'ADMIN'
-    )
-  );
+-- Política: Apenas usuários autenticados podem atualizar notícias
+CREATE POLICY "Authenticated users can update news" ON news
+  FOR UPDATE USING (auth.role() = 'authenticated');
 
--- Política: Apenas administradores podem excluir notícias
-CREATE POLICY "Admins can delete news" ON news
-  FOR DELETE USING (
-    EXISTS (
-      SELECT 1 FROM profiles 
-      WHERE profiles.id = auth.uid() 
-      AND profiles.role = 'ADMIN'
-    )
-  );
+-- Política: Apenas usuários autenticados podem excluir notícias
+CREATE POLICY "Authenticated users can delete news" ON news
+  FOR DELETE USING (auth.role() = 'authenticated');
 
--- Política: Administradores podem ver todas as notícias (incluindo inativas)
-CREATE POLICY "Admins can see all news" ON news
-  FOR SELECT USING (
-    EXISTS (
-      SELECT 1 FROM profiles 
-      WHERE profiles.id = auth.uid() 
-      AND profiles.role = 'ADMIN'
-    )
-  );
+-- Política: Usuários autenticados podem ver todas as notícias (incluindo inativas)
+CREATE POLICY "Authenticated users can see all news" ON news
+  FOR SELECT USING (auth.role() = 'authenticated');
 
 -- Inserir notícias padrão
 INSERT INTO news (title, content, priority, is_active, created_by) VALUES

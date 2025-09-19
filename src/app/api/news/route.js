@@ -22,9 +22,7 @@ export async function GET(request) {
         created_at,
         updated_at,
         created_by,
-        updated_by,
-        profiles:created_by(name, email),
-        updated_profiles:updated_by(name, email)
+        updated_by
       `)
       .order('created_at', { ascending: false })
 
@@ -96,8 +94,7 @@ export async function POST(request) {
         created_at,
         updated_at,
         created_by,
-        updated_by,
-        profiles:created_by(name, email)
+        updated_by
       `)
       .single()
 

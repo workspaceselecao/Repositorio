@@ -339,11 +339,9 @@ export default function NewsSection({ isAdminView = false }) {
                             minute: '2-digit' 
                           })}</span>
                         </div>
-                        {newsItem.profiles && (
-                          <div className="text-xs text-muted-foreground">
-                            Por: {newsItem.profiles.name || newsItem.profiles.email}
-                          </div>
-                        )}
+                        <div className="text-xs text-muted-foreground">
+                          ID: {newsItem.created_by?.slice(0, 8) || 'Sistema'}
+                        </div>
                       </div>
                     </div>
                     {canEdit && (

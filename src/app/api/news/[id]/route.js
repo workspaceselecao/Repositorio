@@ -22,8 +22,6 @@ export async function GET(request, { params }) {
         updated_at,
         created_by,
         updated_by,
-        profiles:created_by(name, email),
-        updated_profiles:updated_by(name, email)
       `)
       .eq('id', id)
       .single()
@@ -96,8 +94,6 @@ export async function PUT(request, { params }) {
         updated_at,
         created_by,
         updated_by,
-        profiles:created_by(name, email),
-        updated_profiles:updated_by(name, email)
       `)
       .single()
 
