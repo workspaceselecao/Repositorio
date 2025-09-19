@@ -250,15 +250,19 @@ export function DataProvider({ children }) {
 
   // Carregar dados quando o usuário mudar
   useEffect(() => {
-    loadAllData()
-  }, [user, loadAllData])
+    if (user) {
+      loadAllData()
+    } else {
+      setData(prev => ({ ...prev, loading: false }))
+    }
+  }, [user]) // Removido loadAllData da dependência
 
   // Recarregar dados quando a versão do cache mudar
   useEffect(() => {
-    if (cacheVersion > 0) {
+    if (cacheVersion > 0 && user) {
       loadAllData(true) // Forçar refresh
     }
-  }, [cacheVersion, loadAllData])
+  }, [cacheVersion, user]) // Removido loadAllData da dependência
 
   // Função para configurar subscriptions em tempo real
   const setupRealtimeSubscriptions = useCallback(() => {
@@ -273,6 +277,7 @@ export function DataProvider({ children }) {
       
       debounceTimeout = setTimeout(() => {
         console.log('Atualizando dados devido a mudança em tempo real')
+        // Usar uma versão estável da função
         loadAllData(true) // Forçar refresh
       }, 1000) // Debounce de 1 segundo
     }
@@ -318,7 +323,7 @@ export function DataProvider({ children }) {
       subscriptionsRef.current.forEach(sub => sub.unsubscribe())
       subscriptionsRef.current = []
     }
-  }, [user, loadAllData])
+  }, [user]) // Removido loadAllData da dependência
 
   // Configurar subscriptions iniciais quando o usuário estiver logado e com foco
   useEffect(() => {
@@ -346,7 +351,7 @@ export function DataProvider({ children }) {
         }
       }
     }
-  }, [isFocused, isVisible, user, data.lastUpdated, loadAllData, isAppSleeping, wakeUp])
+  }, [isFocused, isVisible, user, data.lastUpdated, isAppSleeping, wakeUp]) // Removido loadAllData da dependência
 
   // Pausar subscriptions quando a aplicação perde foco
   useEffect(() => {
@@ -364,7 +369,7 @@ export function DataProvider({ children }) {
       // Reconfigurar subscriptions
       setupRealtimeSubscriptions()
     }
-  }, [isFocused, isVisible, user, setupRealtimeSubscriptions])
+  }, [isFocused, isVisible, user]) // Removido setupRealtimeSubscriptions da dependência
 
   const value = {
     // Dados

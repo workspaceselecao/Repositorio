@@ -16,19 +16,18 @@ export function useNavigation() {
     const now = Date.now()
     const timeSinceLastNav = now - lastNavigation.current.timestamp
     
-    // Se for a mesma rota e passou menos de 500ms, ignorar
-    if (lastNavigation.current.path === path && timeSinceLastNav < 500) {
-      console.log('Navigation to same path ignored (too soon):', path)
+    // Se for a mesma rota e passou menos de 1000ms, ignorar
+    if (lastNavigation.current.path === path && timeSinceLastNav < 1000) {
       return
     }
 
-    // Reset contador se passou mais de 5 segundos
-    if (timeSinceLastNav > 5000) {
+    // Reset contador se passou mais de 10 segundos
+    if (timeSinceLastNav > 10000) {
       navigationCount.current = 0
     }
 
     // Verificar se há muitas navegações em pouco tempo
-    if (navigationCount.current > 10) {
+    if (navigationCount.current > 5) {
       console.warn('⚠️ Muitas navegações detectadas, possível loop infinito')
       return
     }
@@ -36,13 +35,11 @@ export function useNavigation() {
     navigationCount.current += 1
     lastNavigation.current = { path, timestamp: now }
 
-    console.log('Navigating to:', path)
     router.push(path, options)
-  }, 100)
+  }, 200)
 
   const navigate = useCallback((path, options = {}) => {
     if (isNavigating.current) {
-      console.log('Navigation already in progress, ignoring:', path)
       return
     }
 
@@ -56,7 +53,7 @@ export function useNavigation() {
     // Timeout para resetar o estado de navegação
     navigationTimeout.current = setTimeout(() => {
       isNavigating.current = false
-    }, 1000)
+    }, 2000)
 
     debouncedNavigate(path, options)
   }, [debouncedNavigate])
