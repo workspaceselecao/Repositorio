@@ -51,8 +51,8 @@ export default function ComparativoPage() {
   const [vagasParaExport, setVagasParaExport] = useState([])
   const [viewMode, setViewMode] = useState('cards') // 'cards' ou 'charts'
 
-  // Usar o DataContext para obter dados
-  const { getVagasByCliente, getVagasFiltradas } = useData()
+  // Usar o CacheContext para obter dados
+  const { getVagasByCliente, getVagasFiltradas } = useCache()
   
   // Obter vagas para os clientes selecionados
   const vagasParaFiltro = getVagasByCliente(clientesSelecionados)
