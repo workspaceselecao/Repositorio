@@ -40,7 +40,10 @@ export async function POST(request) {
 
     const { email, password, name, role } = await request.json()
     
-    console.log('Dados recebidos para criação:', { email, name, role })
+    console.log('=== INÍCIO DA CRIAÇÃO DE USUÁRIO ===')
+    console.log('Email a ser verificado:', email)
+    console.log('Nome:', name)
+    console.log('Role:', role)
 
     // Validações básicas
     if (!email || !password || !name || !role) {
@@ -75,47 +78,28 @@ export async function POST(request) {
       }, { status: 400 })
     }
 
-    // Verificar se email já existe na tabela users
+    // VERIFICAÇÃO SIMPLES DE EMAIL DUPLICADO
     console.log('Verificando se email já existe na tabela users...')
     const { data: existingUsers, error: checkError } = await supabaseAdmin
       .from('users')
       .select('id, email')
       .eq('email', email)
-      .limit(1)
 
-    console.log('Usuários encontrados na tabela:', existingUsers)
-    console.log('Erro na verificação da tabela:', checkError)
+    console.log('Resultado da verificação:')
+    console.log('- Dados encontrados:', existingUsers)
+    console.log('- Erro na verificação:', checkError)
+    console.log('- Quantidade de usuários encontrados:', existingUsers ? existingUsers.length : 0)
 
+    // Se encontrou algum usuário com este email
     if (existingUsers && existingUsers.length > 0) {
-      console.log('Email já existe na tabela users:', email)
+      console.log('❌ EMAIL JÁ EXISTE - Cadastro negado')
       return Response.json({ 
-        error: 'Este email já está em uso',
+        error: `Este email (${email}) já está cadastrado no sistema`,
         code: 'EMAIL_EXISTS'
       }, { status: 409 })
     }
 
-    // Verificar se email já existe no Auth (método alternativo)
-    console.log('Verificando se email já existe no Auth...')
-    try {
-      const { data: authUsers, error: authCheckError } = await supabaseAdmin.auth.admin.listUsers()
-      
-      if (authCheckError) {
-        console.error('Erro ao verificar usuários no Auth:', authCheckError)
-      } else {
-        const emailExistsInAuth = authUsers?.users?.some(user => user.email === email)
-        console.log('Email existe no Auth:', emailExistsInAuth)
-        
-        if (emailExistsInAuth) {
-          return Response.json({ 
-            error: 'Este email já está cadastrado no sistema',
-            code: 'EMAIL_EXISTS_IN_AUTH'
-          }, { status: 409 })
-        }
-      }
-    } catch (authError) {
-      console.error('Erro ao verificar Auth:', authError)
-      // Continuar mesmo com erro na verificação do Auth
-    }
+    console.log('✅ EMAIL DISPONÍVEL - Prosseguindo com criação')
 
     // Criar usuário no Supabase Auth
     console.log('Criando usuário no Supabase Auth...')
@@ -127,20 +111,14 @@ export async function POST(request) {
     })
 
     if (authError) {
-      console.error('Erro ao criar usuário no Auth:', authError)
-      
-      let errorMessage = 'Erro ao criar usuário'
-      if (authError.message.includes('already registered')) {
-        errorMessage = 'Este email já está em uso'
-      }
-      
+      console.error('❌ Erro ao criar usuário no Auth:', authError)
       return Response.json({ 
-        error: errorMessage,
+        error: `Erro ao criar usuário: ${authError.message}`,
         code: 'AUTH_ERROR'
       }, { status: 400 })
     }
 
-    console.log('Usuário criado no Auth com sucesso:', authData?.user?.id)
+    console.log('✅ Usuário criado no Auth com sucesso:', authData?.user?.id)
 
     // Criar perfil na tabela users
     console.log('Criando perfil na tabela users...')
@@ -156,15 +134,15 @@ export async function POST(request) {
       .single()
 
     if (profileError) {
-      console.error('Erro ao criar perfil do usuário:', profileError)
+      console.error('❌ Erro ao criar perfil do usuário:', profileError)
       
       // Limpar usuário do auth se falhou
       try {
         console.log('Limpando usuário do auth após falha no perfil...')
         await supabaseAdmin.auth.admin.deleteUser(authData.user.id)
-        console.log('Usuário removido do auth com sucesso')
+        console.log('✅ Usuário removido do auth com sucesso')
       } catch (deleteError) {
-        console.error('Erro ao limpar usuário do auth:', deleteError)
+        console.error('❌ Erro ao limpar usuário do auth:', deleteError)
       }
       
       return Response.json({ 
@@ -173,7 +151,8 @@ export async function POST(request) {
       }, { status: 500 })
     }
 
-    console.log('Perfil criado com sucesso:', profileData)
+    console.log('✅ Perfil criado com sucesso:', profileData)
+    console.log('=== USUÁRIO CRIADO COM SUCESSO ===')
 
     return Response.json({ 
       success: true,
@@ -182,9 +161,9 @@ export async function POST(request) {
     }, { status: 201 })
 
   } catch (error) {
-    console.error('Erro na API users POST:', error)
+    console.error('❌ Erro geral na API users POST:', error)
     return Response.json({ 
-      error: 'Erro interno do servidor',
+      error: `Erro interno do servidor: ${error.message}`,
       code: 'INTERNAL_ERROR'
     }, { status: 500 })
   }
