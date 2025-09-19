@@ -73,19 +73,19 @@ export default function Sidebar({ children }) {
   return (
     <div className="flex h-screen bg-background">
       {/* Sidebar */}
-      <div className={`${sidebarOpen ? 'w-72' : 'w-16'} transition-all duration-300 ease-in-out bg-card border-r border-border flex flex-col shadow-lg`}>
+      <div className={`${sidebarOpen ? 'w-72' : 'w-16'} transition-all duration-300 ease-in-out bg-sidebar border-r border-sidebar-border flex flex-col shadow-lg`}>
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-border">
+        <div className="flex items-center justify-between p-6 border-b border-sidebar-border">
           <div className="flex items-center space-x-3">
             {/* Logomarca */}
             <div className="flex-shrink-0">
-              <div className="w-10 h-10 bg-gradient-to-br from-primary to-primary/80 rounded-xl flex items-center justify-center shadow-lg">
-                <Building2 className="w-6 h-6 text-primary-foreground" />
+              <div className="w-10 h-10 bg-gradient-to-br from-sidebar-primary to-sidebar-primary/80 rounded-xl flex items-center justify-center shadow-lg">
+                <Building2 className="w-6 h-6 text-sidebar-primary-foreground" />
               </div>
             </div>
             {sidebarOpen && (
               <div className="animate-fade-in">
-                <h1 className="text-xl font-bold text-foreground truncate">
+                <h1 className="text-xl font-bold text-sidebar-foreground truncate">
                   REPOSITÓRIO
                 </h1>
                 <p className="text-xs text-muted-foreground">Sistema de Vagas</p>
@@ -120,21 +120,21 @@ export default function Sidebar({ children }) {
                 key={item.name}
                 variant={isCurrent ? "secondary" : "ghost"}
                 onClick={() => handleNavigation(item.href)}
-                className={`${
-                  isCurrent
-                    ? 'bg-accent text-accent-foreground shadow-sm'
-                    : 'hover:bg-accent/50'
-                } group flex items-center px-3 py-3 text-sm font-medium rounded-lg transition-all duration-200 w-full text-left justify-start h-auto`}
+            className={`${
+              isCurrent
+                ? 'bg-sidebar-accent text-sidebar-accent-foreground shadow-sm'
+                : 'hover:bg-sidebar-accent/50'
+            } group flex items-center px-3 py-3 text-sm font-medium rounded-lg transition-all duration-200 w-full text-left justify-start h-auto`}
               >
                 <item.icon
                   className={`${
-                    isCurrent ? 'text-accent-foreground' : 'text-muted-foreground group-hover:text-foreground'
+                    isCurrent ? 'text-sidebar-accent-foreground' : 'text-muted-foreground group-hover:text-sidebar-foreground'
                   } h-5 w-5 mr-3 flex-shrink-0 transition-colors duration-200`}
                 />
                 {sidebarOpen && (
                   <div className="flex flex-col items-start animate-fade-in">
                     <span className="truncate font-medium">{item.name}</span>
-                    <span className="text-xs text-muted-foreground group-hover:text-foreground/70">
+                    <span className="text-xs text-muted-foreground group-hover:text-sidebar-foreground/70">
                       {item.description}
                     </span>
                   </div>
@@ -145,7 +145,7 @@ export default function Sidebar({ children }) {
         </nav>
 
         {/* User info and actions */}
-        <div className="p-4 border-t border-border space-y-4">
+        <div className="p-4 border-t border-sidebar-border space-y-4">
           {sidebarOpen && (
             <Card className="p-4 bg-muted/30 border-0">
               <div className="flex items-center space-x-3">
@@ -156,7 +156,7 @@ export default function Sidebar({ children }) {
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium text-foreground truncate">
+                  <div className="text-sm font-medium text-sidebar-foreground truncate">
                     {profile?.name || profile?.email || 'Carregando...'}
                   </div>
                   <div className="flex items-center space-x-2">
@@ -201,7 +201,7 @@ export default function Sidebar({ children }) {
       {/* Main content area */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Mobile header */}
-        <div className="md:hidden bg-card shadow-sm border-b border-border">
+        <div className="md:hidden bg-sidebar shadow-sm border-b border-sidebar-border">
           <div className="flex items-center justify-between px-4 py-3">
             <Button
               variant="ghost"
@@ -212,10 +212,10 @@ export default function Sidebar({ children }) {
               <Menu className="h-5 w-5" />
             </Button>
             <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-gradient-to-br from-primary to-primary/80 rounded-lg flex items-center justify-center">
-                <Building2 className="w-5 h-5 text-primary-foreground" />
+              <div className="w-8 h-8 bg-gradient-to-br from-sidebar-primary to-sidebar-primary/80 rounded-lg flex items-center justify-center">
+                <Building2 className="w-5 h-5 text-sidebar-primary-foreground" />
               </div>
-              <h1 className="text-lg font-semibold text-foreground">
+              <h1 className="text-lg font-semibold text-sidebar-foreground">
                 REPOSITÓRIO
               </h1>
             </div>

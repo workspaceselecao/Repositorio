@@ -6,6 +6,7 @@ import { useData } from '../../contexts/DataContext'
 import { useMemo } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card'
 import { Button } from '../../components/ui/button'
+import ChartDemo from '../../components/ChartDemo'
 import { 
   Users, 
   Briefcase, 
@@ -171,6 +172,9 @@ export default function DashboardPage() {
               </div>
             </div>
 
+            {/* Chart Demo */}
+            <ChartDemo />
+
             {/* Recent Activity */}
             <Card className="animate-fade-in">
               <CardHeader>
@@ -185,13 +189,13 @@ export default function DashboardPage() {
               <CardContent>
                 <div className="space-y-4">
                   <div className="flex items-center space-x-4 p-4 rounded-lg bg-muted/50">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <div className="w-2 h-2 bg-chart-1 rounded-full"></div>
                     <div className="flex-1">
                       <p className="text-sm font-medium text-foreground">
-                        Sistema atualizado
+                        Tema Blue v3 implementado
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        Interface renovada com shadcn/ui
+                        Cores otimizadas para melhor contraste
                       </p>
                     </div>
                     <span className="text-xs text-muted-foreground">
@@ -199,7 +203,7 @@ export default function DashboardPage() {
                     </span>
                   </div>
                   <div className="flex items-center space-x-4 p-4 rounded-lg bg-muted/50">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                    <div className="w-2 h-2 bg-chart-2 rounded-full"></div>
                     <div className="flex-1">
                       <p className="text-sm font-medium text-foreground">
                         {totalVagas} vagas cadastradas
@@ -213,7 +217,7 @@ export default function DashboardPage() {
                     </span>
                   </div>
                   <div className="flex items-center space-x-4 p-4 rounded-lg bg-muted/50">
-                    <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                    <div className="w-2 h-2 bg-chart-3 rounded-full"></div>
                     <div className="flex-1">
                       <p className="text-sm font-medium text-foreground">
                         {totalClientes} clientes ativos
