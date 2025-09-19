@@ -1,0 +1,94 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Auto Commit",
+            "type": "shell",
+            "command": "./auto-commit.sh",
+            "args": ["${input:commitMessage}"],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "panel": "new"
+            },
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Git Status",
+            "type": "shell",
+            "command": "git",
+            "args": ["status"],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "panel": "new"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Git Add All",
+            "type": "shell",
+            "command": "git",
+            "args": ["add", "-A"],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "panel": "new"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Git Commit",
+            "type": "shell",
+            "command": "git",
+            "args": ["commit", "-m", "${input:commitMessage}"],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "panel": "new"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Git Push",
+            "type": "shell",
+            "command": "git",
+            "args": ["push", "origin", "master"],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "panel": "new"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Deploy Vercel",
+            "type": "shell",
+            "command": "vercel",
+            "args": ["--prod"],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "panel": "new"
+            },
+            "problemMatcher": []
+        }
+    ],
+    "inputs": [
+        {
+            "id": "commitMessage",
+            "description": "Commit message",
+            "default": "Auto commit",
+            "type": "promptString"
+        }
+    ]
+}
