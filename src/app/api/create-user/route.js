@@ -16,6 +16,23 @@ export async function POST(request) {
   try {
     console.log('=== CRIAÇÃO DE USUÁRIO ===')
     
+    // Verificar se o cliente Supabase está configurado
+    if (!supabaseAdmin) {
+      console.error('❌ Cliente Supabase não foi criado')
+      return Response.json({ 
+        error: 'Cliente Supabase não configurado' 
+      }, { status: 500 })
+    }
+
+    // Verificar se a Service Role Key está configurada
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      console.error('❌ SUPABASE_SERVICE_ROLE_KEY não configurada')
+      return Response.json({ 
+        error: 'Configuração do servidor incompleta. Service Role Key não encontrada.',
+        code: 'MISSING_SERVICE_ROLE_KEY'
+      }, { status: 500 })
+    }
+    
     const { email, password, name, role } = await request.json()
     
     console.log('Dados recebidos:', { email, name, role })
@@ -29,13 +46,19 @@ export async function POST(request) {
 
     // Verificar se email já existe
     console.log('Verificando email duplicado...')
-    const { data: existingUser } = await supabaseAdmin
+    const { data: existingUsers, error: checkError } = await supabaseAdmin
       .from('users')
       .select('id')
       .eq('email', email)
-      .single()
 
-    if (existingUser) {
+    if (checkError) {
+      console.error('Erro ao verificar email duplicado:', checkError)
+      return Response.json({ 
+        error: 'Erro ao verificar email duplicado' 
+      }, { status: 500 })
+    }
+
+    if (existingUsers && existingUsers.length > 0) {
       console.log('Email já existe:', email)
       return Response.json({ 
         error: 'Este email já está cadastrado' 
@@ -74,7 +97,6 @@ export async function POST(request) {
         role
       })
       .select()
-      .single()
 
     if (profileError) {
       console.error('Erro ao criar perfil:', profileError)
@@ -96,7 +118,7 @@ export async function POST(request) {
     return Response.json({
       success: true,
       message: `Usuário ${name} criado com sucesso!`,
-      user: profileData
+      user: profileData?.[0] || profileData
     })
 
   } catch (error) {

@@ -49,24 +49,32 @@ const UserManagement = () => {
     setSuccess('')
 
     try {
+      console.log('Enviando dados para criação de usuário:', formData)
+      
       const response = await fetch('/api/create-user', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
       })
 
+      console.log('Resposta da API:', response.status, response.statusText)
+      
       const data = await response.json()
+      console.log('Dados da resposta:', data)
 
       if (response.ok) {
-        setSuccess(data.message)
+        setSuccess(data.message || 'Usuário criado com sucesso!')
         setFormData({ name: '', email: '', password: '', role: 'RH' })
         setShowForm(false)
         loadUsers() // Recarregar lista
       } else {
-        setError(data.error || 'Erro ao criar usuário')
+        const errorMessage = data.error || `Erro ${response.status}: ${response.statusText}`
+        console.error('Erro na criação:', errorMessage)
+        setError(errorMessage)
       }
     } catch (error) {
-      setError('Erro de conexão')
+      console.error('Erro de conexão:', error)
+      setError(`Erro de conexão: ${error.message}`)
     } finally {
       setFormLoading(false)
     }
@@ -104,6 +112,25 @@ const UserManagement = () => {
     setSuccess('')
   }
 
+  // Testar configuração
+  const testConfiguration = async () => {
+    try {
+      setError('')
+      setSuccess('')
+      
+      const response = await fetch('/api/test-user-creation')
+      const data = await response.json()
+      
+      if (response.ok) {
+        setSuccess('Configuração OK! ' + data.message)
+      } else {
+        setError('Erro na configuração: ' + data.error)
+      }
+    } catch (error) {
+      setError('Erro ao testar configuração: ' + error.message)
+    }
+  }
+
   // Auto-limpar mensagens
   useEffect(() => {
     if (success) {
@@ -136,15 +163,26 @@ const UserManagement = () => {
           <h2 className="text-2xl font-bold text-gray-900">Gerenciar Usuários</h2>
           <p className="text-gray-600">Gerencie usuários do sistema</p>
         </div>
-        <button
-          onClick={() => setShowForm(!showForm)}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-          </svg>
-          <span>Novo Usuário</span>
-        </button>
+        <div className="flex space-x-2">
+          <button
+            onClick={testConfiguration}
+            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span>Testar Config</span>
+          </button>
+          <button
+            onClick={() => setShowForm(!showForm)}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            <span>Novo Usuário</span>
+          </button>
+        </div>
       </div>
 
       {/* Mensagens */}

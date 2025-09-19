@@ -148,7 +148,6 @@ export async function POST(request) {
         role
       }])
       .select()
-      .single()
 
     if (profileError) {
       console.error('❌ Erro ao criar perfil do usuário:', profileError)
@@ -173,7 +172,7 @@ export async function POST(request) {
 
     return Response.json({ 
       success: true,
-      user: profileData,
+      user: profileData?.[0] || profileData,
       message: `Usuário ${name} criado com sucesso!`
     }, { status: 201 })
 
