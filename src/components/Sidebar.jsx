@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useAuth } from '../contexts/AuthContext'
@@ -18,7 +18,9 @@ import {
   LogOut,
   Menu,
   X,
-  Building2
+  Building2,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react'
 
 const navigation = [
@@ -37,8 +39,18 @@ export default function Sidebar({ children }) {
   const pathname = usePathname()
   const [lastClickTime, setLastClickTime] = useState(0)
 
+  // Persistir estado da sidebar no localStorage
+  useEffect(() => {
+    const savedState = localStorage.getItem('sidebarOpen')
+    if (savedState !== null) {
+      setSidebarOpen(JSON.parse(savedState))
+    }
+  }, [])
+
   const toggleSidebar = () => {
-    setSidebarOpen(!sidebarOpen)
+    const newState = !sidebarOpen
+    setSidebarOpen(newState)
+    localStorage.setItem('sidebarOpen', JSON.stringify(newState))
   }
 
   const toggleMobileMenu = () => {
@@ -73,9 +85,9 @@ export default function Sidebar({ children }) {
   return (
     <div className="flex h-screen bg-background">
       {/* Sidebar */}
-      <div className={`${sidebarOpen ? 'w-72' : 'w-16'} transition-all duration-300 ease-in-out bg-sidebar border-r border-sidebar-border flex flex-col shadow-lg`}>
+      <div className={`${sidebarOpen ? 'w-72' : 'w-16'} transition-all duration-300 ease-in-out bg-sidebar border-r border-sidebar-border flex flex-col shadow-lg relative`}>
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-sidebar-border">
+        <div className={`flex items-center ${sidebarOpen ? 'justify-between' : 'justify-center'} p-4 border-b border-sidebar-border`}>
           <div className="flex items-center space-x-3">
             {/* Logomarca */}
             <div className="flex-shrink-0">
@@ -92,22 +104,34 @@ export default function Sidebar({ children }) {
               </div>
             )}
           </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={toggleSidebar}
-            className="h-8 w-8 hover:bg-accent"
-          >
-            {sidebarOpen ? (
-              <X className="h-4 w-4" />
-            ) : (
-              <Menu className="h-4 w-4" />
-            )}
-          </Button>
+          {sidebarOpen && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleSidebar}
+              className="h-8 w-8 hover:bg-accent"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+          )}
         </div>
 
+        {/* Botão de expansão quando contraída */}
+        {!sidebarOpen && (
+          <div className="absolute top-4 right-2 z-10">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleSidebar}
+              className="h-8 w-8 hover:bg-accent bg-sidebar border border-sidebar-border"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
+
         {/* Navigation */}
-        <nav className="flex-1 px-4 py-6 space-y-2">
+        <nav className={`flex-1 ${sidebarOpen ? 'px-4' : 'px-2'} py-6 space-y-2`}>
           {navigation.map((item) => {
             // Verificar se o usuário tem permissão para ver o item
             if (item.adminOnly && profile?.role !== 'ADMIN') {
@@ -120,16 +144,23 @@ export default function Sidebar({ children }) {
                 key={item.name}
                 variant={isCurrent ? "secondary" : "ghost"}
                 onClick={() => handleNavigation(item.href)}
-            className={`${
-              isCurrent
-                ? 'bg-sidebar-accent text-sidebar-accent-foreground shadow-sm'
-                : 'hover:bg-sidebar-accent/50'
-            } group flex items-center px-3 py-3 text-sm font-medium rounded-lg transition-all duration-200 w-full text-left justify-start h-auto`}
+                className={`${
+                  isCurrent
+                    ? 'bg-sidebar-accent text-sidebar-accent-foreground shadow-sm'
+                    : 'hover:bg-sidebar-accent/50'
+                } group flex items-center ${
+                  sidebarOpen ? 'px-3 py-3' : 'px-2 py-3 justify-center'
+                } text-sm font-medium rounded-lg transition-all duration-200 w-full ${
+                  sidebarOpen ? 'text-left justify-start' : 'justify-center'
+                } h-auto`}
+                title={!sidebarOpen ? item.name : undefined}
               >
                 <item.icon
                   className={`${
                     isCurrent ? 'text-sidebar-accent-foreground' : 'text-muted-foreground group-hover:text-sidebar-foreground'
-                  } h-5 w-5 mr-3 flex-shrink-0 transition-colors duration-200`}
+                  } ${
+                    sidebarOpen ? 'h-5 w-5 mr-3' : 'h-5 w-5'
+                  } flex-shrink-0 transition-colors duration-200`}
                 />
                 {sidebarOpen && (
                   <div className="flex flex-col items-start animate-fade-in">
@@ -145,7 +176,7 @@ export default function Sidebar({ children }) {
         </nav>
 
         {/* User info and actions */}
-        <div className="p-4 border-t border-sidebar-border space-y-4">
+        <div className={`${sidebarOpen ? 'p-4' : 'p-2'} border-t border-sidebar-border space-y-4`}>
           {sidebarOpen && (
             <Card className="p-4 bg-muted/30 border-0">
               <div className="flex items-center space-x-3">
@@ -173,27 +204,21 @@ export default function Sidebar({ children }) {
             </Card>
           )}
           
-          <div className="flex items-center space-x-2">
+          <div className={`flex items-center ${sidebarOpen ? 'space-x-2' : 'flex-col space-y-2'}`}>
             <ThemeToggle />
             <Button
               variant="ghost"
               size="icon"
               onClick={handleSignOut}
-              className="h-9 w-9 text-destructive hover:text-destructive hover:bg-destructive/10"
+              className={`${
+                sidebarOpen 
+                  ? 'h-9 w-9 text-destructive hover:text-destructive hover:bg-destructive/10' 
+                  : 'h-9 w-9 text-destructive hover:text-destructive hover:bg-destructive/10'
+              }`}
               title="Sair"
             >
               <LogOut className="h-4 w-4" />
             </Button>
-            {sidebarOpen && (
-              <Button
-                variant="ghost"
-                onClick={handleSignOut}
-                className="flex-1 text-destructive hover:text-destructive hover:bg-destructive/10"
-              >
-                <LogOut className="h-4 w-4 mr-2" />
-                Sair
-              </Button>
-            )}
           </div>
         </div>
       </div>

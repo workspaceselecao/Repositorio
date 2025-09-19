@@ -61,13 +61,12 @@ export default function DashboardLayout({ children, requiredRole = null }) {
   }
 
   return (
-    <div className="flex h-screen bg-background">
-      <Sidebar />
+    <Sidebar>
       <main className="flex-1 overflow-y-auto">
         {children}
       </main>
       <InstallPWA />
       <OfflineIndicator />
-    </div>
+    </Sidebar>
   )
 }
