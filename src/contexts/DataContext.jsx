@@ -1,137 +1,244 @@
 'use client'
 
-import { createContext, useContext, useEffect, useState, useCallback } from 'react'
+import { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from './AuthContext'
-import { useOptimizedLoading } from '../hooks/useOptimizedLoading'
+import { useFocus } from '../components/FocusManager'
 
 const DataContext = createContext(undefined)
 
+// Cache persistente no localStorage
+const CACHE_KEY = 'repositorio_data_cache'
+const CACHE_VERSION = '1.0.0'
+
+const saveToCache = (data) => {
+  try {
+    const cacheData = {
+      data,
+      timestamp: Date.now(),
+      version: CACHE_VERSION
+    }
+    localStorage.setItem(CACHE_KEY, JSON.stringify(cacheData))
+  } catch (error) {
+    console.warn('Erro ao salvar cache:', error)
+  }
+}
+
+const loadFromCache = () => {
+  try {
+    const cached = localStorage.getItem(CACHE_KEY)
+    if (!cached) return null
+    
+    const { data, timestamp, version } = JSON.parse(cached)
+    
+    // Verificar se o cache é válido (24 horas)
+    const isExpired = Date.now() - timestamp > 24 * 60 * 60 * 1000
+    const isVersionValid = version === CACHE_VERSION
+    
+    if (isExpired || !isVersionValid) {
+      localStorage.removeItem(CACHE_KEY)
+      return null
+    }
+    
+    return data
+  } catch (error) {
+    console.warn('Erro ao carregar cache:', error)
+    localStorage.removeItem(CACHE_KEY)
+    return null
+  }
+}
+
 export function DataProvider({ children }) {
   const { user } = useAuth()
+  const { isFocused, isVisible, isAppSleeping, wakeUp } = useFocus()
+  const [data, setData] = useState({
+    vagas: [],
+    clientes: [],
+    sites: [],
+    users: [],
+    loading: true,
+    lastUpdated: null
+  })
   const [cacheVersion, setCacheVersion] = useState(0)
+  const isLoadingRef = useRef(false)
+  const subscriptionsRef = useRef([])
 
-  // Função para buscar todos os dados
-  const fetchAllData = useCallback(async (signal) => {
-    if (!user) return {
-      vagas: [],
-      clientes: [],
-      sites: [],
-      users: [],
-      loading: false,
-      lastUpdated: null
+  // Função para carregar todos os dados
+  const loadAllData = useCallback(async (forceRefresh = false) => {
+    if (!user) {
+      setData(prev => ({ ...prev, loading: false }))
+      return
     }
 
-    // Carregar vagas
-    const { data: vagas, error: vagasError } = await supabase
-      .from('vagas')
-      .select('*')
-      .order('created_at', { ascending: false })
+    // Evitar carregamento desnecessário se já estiver carregando
+    if (isLoadingRef.current && !forceRefresh) {
+      return
+    }
 
-    if (vagasError) throw vagasError
-
-    // Carregar usuários
-    const { data: users, error: usersError } = await supabase
-      .from('users')
-      .select('*')
-      .order('created_at', { ascending: false })
-
-    if (usersError) throw usersError
-
-    // Processar clientes a partir das vagas
-    const clientesMap = (vagas || []).reduce((acc, vaga) => {
-      const cliente = vaga.cliente
-      if (cliente) {
-        acc[cliente] = (acc[cliente] || 0) + 1
+    // Tentar carregar do cache primeiro (se não for refresh forçado)
+    if (!forceRefresh) {
+      const cachedData = loadFromCache()
+      if (cachedData) {
+        setData(prev => ({ ...prev, ...cachedData, loading: false }))
+        return
       }
-      return acc
-    }, {})
+    }
 
-    const clientes = Object.entries(clientesMap)
-      .map(([nome, totalVagas]) => ({ nome, totalVagas }))
-      .sort((a, b) => a.nome.localeCompare(b.nome))
+    try {
+      isLoadingRef.current = true
+      setData(prev => ({ ...prev, loading: true }))
 
-    // Processar sites a partir das vagas
-    const sites = Array.from(new Set((vagas || []).map(v => v.site).filter(Boolean))).sort()
+      // Carregar vagas
+      const { data: vagas, error: vagasError } = await supabase
+        .from('vagas')
+        .select('*')
+        .order('created_at', { ascending: false })
 
-    return {
-      vagas: vagas || [],
-      clientes,
-      sites,
-      users: users || [],
-      loading: false,
-      lastUpdated: new Date().toISOString()
+      if (vagasError) throw vagasError
+
+      // Carregar usuários
+      const { data: users, error: usersError } = await supabase
+        .from('users')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+      if (usersError) throw usersError
+
+      // Processar clientes a partir das vagas
+      const clientesMap = (vagas || []).reduce((acc, vaga) => {
+        const cliente = vaga.cliente
+        if (cliente) {
+          acc[cliente] = (acc[cliente] || 0) + 1
+        }
+        return acc
+      }, {})
+
+      const clientes = Object.entries(clientesMap)
+        .map(([nome, totalVagas]) => ({ nome, totalVagas }))
+        .sort((a, b) => a.nome.localeCompare(b.nome))
+
+      // Processar sites a partir das vagas
+      const sites = Array.from(new Set((vagas || []).map(v => v.site).filter(Boolean))).sort()
+
+      const newData = {
+        vagas: vagas || [],
+        clientes,
+        sites,
+        users: users || [],
+        loading: false,
+        lastUpdated: new Date().toISOString()
+      }
+
+      setData(newData)
+      
+      // Salvar no cache
+      saveToCache(newData)
+
+    } catch (error) {
+      console.error('Erro ao carregar dados:', error)
+      setData(prev => ({ ...prev, loading: false }))
+    } finally {
+      isLoadingRef.current = false
     }
   }, [user])
-
-  // Usar o hook otimizado para gerenciar dados
-  const { data, loading, error, lastUpdated, refresh } = useOptimizedLoading(fetchAllData, {
-    key: `repositorio_data_${user?.id || 'anonymous'}`,
-    ttl: 5 * 60 * 1000, // 5 minutos
-    enableCache: true,
-    enableAutoRefresh: true,
-    refreshInterval: 2 * 60 * 1000, // 2 minutos
-    maxRetries: 3,
-    retryDelay: 1000
-  })
-
-  // Função para carregar todos os dados (mantida para compatibilidade)
-  const loadAllData = useCallback(async (forceReload = false) => {
-    if (forceReload) {
-      refresh()
-    }
-  }, [refresh])
 
   // Função para invalidar cache
   const invalidateCache = useCallback(() => {
     setCacheVersion(prev => prev + 1)
+    // Limpar cache do localStorage
+    try {
+      localStorage.removeItem(CACHE_KEY)
+    } catch (error) {
+      console.warn('Erro ao limpar cache:', error)
+    }
   }, [])
 
   // Função para adicionar vaga
   const addVaga = useCallback((novaVaga) => {
-    // Atualizar dados localmente e recarregar
-    refresh()
-  }, [refresh])
+    setData(prev => {
+      const newData = {
+        ...prev,
+        vagas: [novaVaga, ...prev.vagas],
+        lastUpdated: new Date().toISOString()
+      }
+      saveToCache(newData)
+      return newData
+    })
+  }, [])
 
   // Função para atualizar vaga
   const updateVaga = useCallback((vagaAtualizada) => {
-    // Atualizar dados localmente e recarregar
-    refresh()
-  }, [refresh])
+    setData(prev => {
+      const newData = {
+        ...prev,
+        vagas: prev.vagas.map(v => v.id === vagaAtualizada.id ? vagaAtualizada : v),
+        lastUpdated: new Date().toISOString()
+      }
+      saveToCache(newData)
+      return newData
+    })
+  }, [])
 
   // Função para remover vaga
   const removeVaga = useCallback((vagaId) => {
-    // Atualizar dados localmente e recarregar
-    refresh()
-  }, [refresh])
+    setData(prev => {
+      const newData = {
+        ...prev,
+        vagas: prev.vagas.filter(v => v.id !== vagaId),
+        lastUpdated: new Date().toISOString()
+      }
+      saveToCache(newData)
+      return newData
+    })
+  }, [])
 
   // Função para adicionar usuário
   const addUser = useCallback((novoUsuario) => {
-    // Atualizar dados localmente e recarregar
-    refresh()
-  }, [refresh])
+    setData(prev => {
+      const newData = {
+        ...prev,
+        users: [novoUsuario, ...prev.users],
+        lastUpdated: new Date().toISOString()
+      }
+      saveToCache(newData)
+      return newData
+    })
+  }, [])
 
   // Função para atualizar usuário
   const updateUser = useCallback((usuarioAtualizado) => {
-    // Atualizar dados localmente e recarregar
-    refresh()
-  }, [refresh])
+    setData(prev => {
+      const newData = {
+        ...prev,
+        users: prev.users.map(u => u.id === usuarioAtualizado.id ? usuarioAtualizado : u),
+        lastUpdated: new Date().toISOString()
+      }
+      saveToCache(newData)
+      return newData
+    })
+  }, [])
 
   // Função para remover usuário
   const removeUser = useCallback((usuarioId) => {
-    // Atualizar dados localmente e recarregar
-    refresh()
-  }, [refresh])
+    setData(prev => {
+      const newData = {
+        ...prev,
+        users: prev.users.filter(u => u.id !== usuarioId),
+        lastUpdated: new Date().toISOString()
+      }
+      saveToCache(newData)
+      return newData
+    })
+  }, [])
 
   // Função para obter vagas por cliente
   const getVagasByCliente = useCallback((clientes) => {
-    if (!clientes || clientes.length === 0 || !data) return []
+    if (!clientes || clientes.length === 0) return []
     return data.vagas.filter(vaga => clientes.includes(vaga.cliente))
-  }, [data])
+  }, [data.vagas])
 
   // Função para obter vagas filtradas
   const getVagasFiltradas = useCallback((filtros) => {
-    if (!data) return []
     return data.vagas.filter(vaga => {
       const matchSite = filtros.site ? vaga.site === filtros.site : true
       const matchCategoria = filtros.categoria ? vaga.categoria === filtros.categoria : true
@@ -139,11 +246,82 @@ export function DataProvider({ children }) {
       const matchProduto = filtros.produto ? vaga.produto === filtros.produto : true
       return matchSite && matchCategoria && matchCargo && matchProduto
     })
-  }, [data])
+  }, [data.vagas])
 
-  // Configurar atualizações em tempo real
+  // Carregar dados quando o usuário mudar
+  useEffect(() => {
+    loadAllData()
+  }, [user, loadAllData])
+
+  // Recarregar dados quando a versão do cache mudar
+  useEffect(() => {
+    if (cacheVersion > 0) {
+      loadAllData(true) // Forçar refresh
+    }
+  }, [cacheVersion, loadAllData])
+
+  // Configurar subscriptions iniciais quando o usuário estiver logado e com foco
+  useEffect(() => {
+    if (user && isFocused && isVisible) {
+      const cleanup = setupRealtimeSubscriptions()
+      return cleanup
+    }
+  }, [user, isFocused, isVisible, setupRealtimeSubscriptions])
+
+  // Tratamento para mudanças de foco usando FocusManager
   useEffect(() => {
     if (!user) return
+
+    // Quando a aplicação volta ao foco após estar "dormindo"
+    if (isFocused && isVisible && isAppSleeping()) {
+      console.log('🌅 App woke up from sleep, checking for updates...')
+      wakeUp()
+      
+      const lastUpdate = data.lastUpdated
+      if (lastUpdate) {
+        const timeSinceUpdate = Date.now() - new Date(lastUpdate).getTime()
+        // Se passou mais de 2 minutos, atualizar dados
+        if (timeSinceUpdate > 2 * 60 * 1000) {
+          loadAllData(true)
+        }
+      }
+    }
+  }, [isFocused, isVisible, user, data.lastUpdated, loadAllData, isAppSleeping, wakeUp])
+
+  // Pausar subscriptions quando a aplicação perde foco
+  useEffect(() => {
+    if (!user) return
+
+    if (!isFocused || !isVisible) {
+      console.log('⏸️ Pausing real-time subscriptions due to focus loss')
+      // Pausar subscriptions
+      subscriptionsRef.current.forEach(sub => {
+        sub.unsubscribe()
+      })
+      subscriptionsRef.current = []
+    } else {
+      console.log('▶️ Resuming real-time subscriptions due to focus gain')
+      // Reconfigurar subscriptions
+      setupRealtimeSubscriptions()
+    }
+  }, [isFocused, isVisible, user])
+
+  // Função para configurar subscriptions em tempo real
+  const setupRealtimeSubscriptions = useCallback(() => {
+    if (!user) return
+
+    let debounceTimeout = null
+
+    const handleRealtimeChange = () => {
+      if (debounceTimeout) {
+        clearTimeout(debounceTimeout)
+      }
+      
+      debounceTimeout = setTimeout(() => {
+        console.log('Atualizando dados devido a mudança em tempo real')
+        loadAllData(true) // Forçar refresh
+      }, 1000) // Debounce de 1 segundo
+    }
 
     // Configurar listeners para mudanças em tempo real
     const vagasSubscription = supabase
@@ -156,7 +334,7 @@ export function DataProvider({ children }) {
         }, 
         (payload) => {
           console.log('Mudança detectada na tabela vagas:', payload)
-          refresh() // Usar refresh em vez de invalidateCache
+          handleRealtimeChange()
         }
       )
       .subscribe()
@@ -171,27 +349,31 @@ export function DataProvider({ children }) {
         }, 
         (payload) => {
           console.log('Mudança detectada na tabela users:', payload)
-          refresh() // Usar refresh em vez de invalidateCache
+          handleRealtimeChange()
         }
       )
       .subscribe()
 
-    // Cleanup das subscriptions
+    // Armazenar referências para cleanup
+    subscriptionsRef.current = [vagasSubscription, usersSubscription]
+
     return () => {
-      vagasSubscription.unsubscribe()
-      usersSubscription.unsubscribe()
+      if (debounceTimeout) {
+        clearTimeout(debounceTimeout)
+      }
+      subscriptionsRef.current.forEach(sub => sub.unsubscribe())
+      subscriptionsRef.current = []
     }
-  }, [user, refresh])
+  }, [user, loadAllData])
 
   const value = {
     // Dados
-    vagas: data?.vagas || [],
-    clientes: data?.clientes || [],
-    sites: data?.sites || [],
-    users: data?.users || [],
-    loading: loading,
-    lastUpdated: lastUpdated,
-    error: error,
+    vagas: data.vagas,
+    clientes: data.clientes,
+    sites: data.sites,
+    users: data.users,
+    loading: data.loading,
+    lastUpdated: data.lastUpdated,
     
     // Funções de manipulação
     addVaga,
@@ -207,7 +389,7 @@ export function DataProvider({ children }) {
     
     // Controle de cache
     invalidateCache,
-    refreshData: refresh
+    refreshData: loadAllData
   }
 
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>

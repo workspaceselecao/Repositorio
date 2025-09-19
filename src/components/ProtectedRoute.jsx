@@ -3,7 +3,6 @@
 import { useAuth } from '../contexts/AuthContext'
 import { useData } from '../contexts/DataContext'
 import { useNavigation } from '../hooks/useNavigation'
-import { PracticalLoading } from './PracticalLoading'
 import { useEffect } from 'react'
 
 export function ProtectedRoute({ children }) {
@@ -12,29 +11,22 @@ export function ProtectedRoute({ children }) {
   const { navigate } = useNavigation()
 
   useEffect(() => {
-    if (!loading && !isRedirecting && !user) {
+    if (!loading && !user) {
       navigate('/login')
     }
-  }, [user, loading, isRedirecting, navigate])
+  }, [user, loading, navigate])
 
-  // Se está autenticando ou redirecionando, mostrar loading
-  if (loading || isRedirecting) {
+  // Mostrar loading enquanto está autenticando ou carregando dados
+  if (loading || isRedirecting || dataLoading) {
     return (
-      <PracticalLoading 
-        loading={true}
-        minLoadingTime={500}
-        maxLoadingTime={5000}
-        showProgress={isRedirecting}
-      >
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500 mx-auto"></div>
-            <p className="mt-4 text-gray-600">
-              {isRedirecting ? 'Redirecionando...' : 'Carregando...'}
-            </p>
-          </div>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500 mx-auto"></div>
+          <p className="mt-4 text-gray-600">
+            {isRedirecting ? 'Redirecionando...' : 'Carregando...'}
+          </p>
         </div>
-      </PracticalLoading>
+      </div>
     )
   }
 
@@ -42,17 +34,7 @@ export function ProtectedRoute({ children }) {
     return null
   }
 
-  // Usar PracticalLoading para dados com timeout
-  return (
-    <PracticalLoading 
-      loading={dataLoading}
-      minLoadingTime={300}
-      maxLoadingTime={8000}
-      showProgress={true}
-    >
-      {children}
-    </PracticalLoading>
-  )
+  return <>{children}</>
 }
 
 export function PublicRoute({ children }) {

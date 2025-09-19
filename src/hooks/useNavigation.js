@@ -2,11 +2,43 @@
 
 import { useCallback, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { useDebouncedCallback } from './useDebounce'
 
 export function useNavigation() {
   const router = useRouter()
   const isNavigating = useRef(false)
   const navigationTimeout = useRef(null)
+  const lastNavigation = useRef({ path: null, timestamp: 0 })
+  const navigationCount = useRef(0)
+
+  // Debounced navigation para evitar múltiplas chamadas
+  const debouncedNavigate = useDebouncedCallback((path, options) => {
+    const now = Date.now()
+    const timeSinceLastNav = now - lastNavigation.current.timestamp
+    
+    // Se for a mesma rota e passou menos de 500ms, ignorar
+    if (lastNavigation.current.path === path && timeSinceLastNav < 500) {
+      console.log('Navigation to same path ignored (too soon):', path)
+      return
+    }
+
+    // Reset contador se passou mais de 5 segundos
+    if (timeSinceLastNav > 5000) {
+      navigationCount.current = 0
+    }
+
+    // Verificar se há muitas navegações em pouco tempo
+    if (navigationCount.current > 10) {
+      console.warn('⚠️ Muitas navegações detectadas, possível loop infinito')
+      return
+    }
+
+    navigationCount.current += 1
+    lastNavigation.current = { path, timestamp: now }
+
+    console.log('Navigating to:', path)
+    router.push(path, options)
+  }, 100)
 
   const navigate = useCallback((path, options = {}) => {
     if (isNavigating.current) {
@@ -26,9 +58,8 @@ export function useNavigation() {
       isNavigating.current = false
     }, 1000)
 
-    console.log('Navigating to:', path)
-    router.push(path, options)
-  }, [router])
+    debouncedNavigate(path, options)
+  }, [debouncedNavigate])
 
   const replace = useCallback((path, options = {}) => {
     if (isNavigating.current) {
@@ -50,6 +81,18 @@ export function useNavigation() {
     router.replace(path, options)
   }, [router])
 
+  // Função para resetar estado de navegação (útil para recovery)
+  const resetNavigation = useCallback(() => {
+    isNavigating.current = false
+    navigationCount.current = 0
+    lastNavigation.current = { path: null, timestamp: 0 }
+    
+    if (navigationTimeout.current) {
+      clearTimeout(navigationTimeout.current)
+      navigationTimeout.current = null
+    }
+  }, [])
+
   // Cleanup no unmount
   useEffect(() => {
     return () => {
@@ -62,6 +105,7 @@ export function useNavigation() {
   return {
     navigate,
     replace,
+    resetNavigation,
     isNavigating: isNavigating.current
   }
 }

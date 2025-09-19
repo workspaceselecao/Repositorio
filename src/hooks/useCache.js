@@ -87,7 +87,6 @@ export function useCache(
     const cachedData = globalCache.get(key)
     if (cachedData) {
       setData(cachedData)
-      setLoading(false)
       return
     }
 
@@ -103,7 +102,7 @@ export function useCache(
     } finally {
       setLoading(false)
     }
-  }, [key, ttl, fetcher]) // Adicionado fetcher de volta, mas com controle de dependências
+  }, [key, ttl]) // Removido fetcher das dependências para evitar loops
 
   const refetch = useCallback(async () => {
     globalCache.clear() // Clear cache for this key
@@ -117,7 +116,7 @@ export function useCache(
 
   useEffect(() => {
     fetchData()
-  }, [fetchData]) // Usar fetchData como dependência, mas com controle interno
+  }, [key]) // Usar apenas key como dependência para evitar loops
 
   return {
     data,
