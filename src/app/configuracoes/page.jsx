@@ -328,7 +328,7 @@ export default function ConfiguracoesPage() {
                         </CardDescription>
                       </CardHeader>
                       <CardContent>
-                        <NewsSection />
+                        <NewsSection isAdminView={true} />
                       </CardContent>
                     </Card>
                   )}

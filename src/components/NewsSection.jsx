@@ -1,10 +1,12 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card'
 import { Button } from './ui/button'
 import { Badge } from './ui/badge'
+import { useNews } from '../hooks/useNews'
+import { useAuth } from '../contexts/AuthContext'
 import { 
   Newspaper, 
   Calendar, 
@@ -13,102 +15,89 @@ import {
   Trash2, 
   Plus,
   Save,
-  X
+  X,
+  Loader2,
+  AlertCircle
 } from 'lucide-react'
 
-export default function NewsSection() {
-  const [news, setNews] = useState([])
+export default function NewsSection({ isAdminView = false }) {
+  const { user, profile } = useAuth()
+  const { 
+    news, 
+    loading, 
+    error, 
+    createNews, 
+    updateNews, 
+    deleteNews 
+  } = useNews(isAdminView)
+  
   const [isEditing, setIsEditing] = useState(false)
   const [editingNews, setEditingNews] = useState(null)
-  const [newNews, setNewNews] = useState({ title: '', content: '', date: '' })
-
-  // Carregar notícias do localStorage
-  useEffect(() => {
-    const savedNews = localStorage.getItem('dashboardNews')
-    if (savedNews) {
-      setNews(JSON.parse(savedNews))
-    } else {
-      // Notícias padrão
-      const defaultNews = [
-        {
-          id: 1,
-          title: 'Bem-vindo ao Sistema de Vagas',
-          content: 'Sistema atualizado com novas funcionalidades de gerenciamento e análise de vagas de emprego.',
-          date: new Date().toISOString().split('T')[0],
-          priority: 'high'
-        },
-        {
-          id: 2,
-          title: 'Nova Funcionalidade: Comparativo de Vagas',
-          content: 'Agora você pode comparar vagas de diferentes empresas e analisar benefícios, salários e requisitos.',
-          date: new Date(Date.now() - 86400000).toISOString().split('T')[0],
-          priority: 'medium'
-        },
-        {
-          id: 3,
-          title: 'Manutenção Programada',
-          content: 'Sistema passará por manutenção preventiva no próximo domingo das 02:00 às 04:00.',
-          date: new Date(Date.now() - 172800000).toISOString().split('T')[0],
-          priority: 'low'
-        }
-      ]
-      setNews(defaultNews)
-      localStorage.setItem('dashboardNews', JSON.stringify(defaultNews))
-    }
-  }, [])
-
-  // Salvar notícias no localStorage
-  const saveNews = (updatedNews) => {
-    setNews(updatedNews)
-    localStorage.setItem('dashboardNews', JSON.stringify(updatedNews))
-  }
+  const [newNews, setNewNews] = useState({ title: '', content: '', priority: 'medium' })
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   // Adicionar nova notícia
-  const handleAddNews = () => {
-    if (newNews.title && newNews.content) {
-      const newsItem = {
-        id: Date.now(),
+  const handleAddNews = async () => {
+    if (!newNews.title || !newNews.content) return
+
+    try {
+      setIsSubmitting(true)
+      await createNews({
         title: newNews.title,
         content: newNews.content,
-        date: newNews.date || new Date().toISOString().split('T')[0],
-        priority: 'medium'
-      }
-      const updatedNews = [newsItem, ...news]
-      saveNews(updatedNews)
-      setNewNews({ title: '', content: '', date: '' })
+        priority: newNews.priority
+      })
+      setNewNews({ title: '', content: '', priority: 'medium' })
       setIsEditing(false)
+    } catch (error) {
+      console.error('Erro ao criar notícia:', error)
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
   // Editar notícia
   const handleEditNews = (newsItem) => {
-    setEditingNews(newsItem)
+    setEditingNews({ ...newsItem })
     setIsEditing(true)
   }
 
   // Salvar edição
-  const handleSaveEdit = () => {
-    if (editingNews.title && editingNews.content) {
-      const updatedNews = news.map(item => 
-        item.id === editingNews.id ? editingNews : item
-      )
-      saveNews(updatedNews)
+  const handleSaveEdit = async () => {
+    if (!editingNews.title || !editingNews.content) return
+
+    try {
+      setIsSubmitting(true)
+      await updateNews(editingNews.id, {
+        title: editingNews.title,
+        content: editingNews.content,
+        priority: editingNews.priority
+      })
       setEditingNews(null)
       setIsEditing(false)
+    } catch (error) {
+      console.error('Erro ao atualizar notícia:', error)
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
   // Excluir notícia
-  const handleDeleteNews = (id) => {
-    const updatedNews = news.filter(item => item.id !== id)
-    saveNews(updatedNews)
+  const handleDeleteNews = async (id) => {
+    if (!confirm('Tem certeza que deseja excluir esta notícia?')) return
+
+    try {
+      await deleteNews(id)
+    } catch (error) {
+      console.error('Erro ao excluir notícia:', error)
+    }
   }
 
   // Cancelar edição
   const handleCancelEdit = () => {
     setEditingNews(null)
     setIsEditing(false)
-    setNewNews({ title: '', content: '', date: '' })
+    setNewNews({ title: '', content: '', priority: 'medium' })
   }
 
   const getPriorityColor = (priority) => {
@@ -149,6 +138,32 @@ export default function NewsSection() {
     }
   }
 
+  // Verificar se o usuário pode editar notícias
+  const canEdit = profile?.role === 'ADMIN'
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
+          <p className="text-muted-foreground">Carregando notícias...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="text-center">
+          <AlertCircle className="h-8 w-8 text-destructive mx-auto mb-4" />
+          <p className="text-destructive mb-2">Erro ao carregar notícias</p>
+          <p className="text-muted-foreground text-sm">{error}</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <motion.div
       variants={containerVariants}
@@ -167,17 +182,19 @@ export default function NewsSection() {
             <p className="text-muted-foreground">Fique por dentro das últimas atualizações do sistema</p>
           </div>
         </div>
-        <Button
-          onClick={() => setIsEditing(!isEditing)}
-          className="bg-gradient-to-r from-primary to-chart-2 hover:from-primary/90 hover:to-chart-2/90"
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          {isEditing ? 'Cancelar' : 'Nova Notícia'}
-        </Button>
+        {canEdit && (
+          <Button
+            onClick={() => setIsEditing(!isEditing)}
+            className="bg-gradient-to-r from-primary to-chart-2 hover:from-primary/90 hover:to-chart-2/90"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            {isEditing ? 'Cancelar' : 'Nova Notícia'}
+          </Button>
+        )}
       </motion.div>
 
       {/* Formulário de Nova Notícia */}
-      {isEditing && (
+      {isEditing && canEdit && (
         <motion.div
           initial={{ opacity: 0, height: 0 }}
           animate={{ opacity: 1, height: 'auto' }}
@@ -230,32 +247,41 @@ export default function NewsSection() {
               </div>
               <div>
                 <label className="text-sm font-medium text-foreground mb-2 block">
-                  Data
+                  Prioridade
                 </label>
-                <input
-                  type="date"
-                  value={editingNews ? editingNews.date : newNews.date}
+                <select
+                  value={editingNews ? editingNews.priority : newNews.priority}
                   onChange={(e) => {
                     if (editingNews) {
-                      setEditingNews({ ...editingNews, date: e.target.value })
+                      setEditingNews({ ...editingNews, priority: e.target.value })
                     } else {
-                      setNewNews({ ...newNews, date: e.target.value })
+                      setNewNews({ ...newNews, priority: e.target.value })
                     }
                   }}
-                  className="px-3 py-2 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                />
+                  className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                >
+                  <option value="low">Baixa</option>
+                  <option value="medium">Média</option>
+                  <option value="high">Alta</option>
+                </select>
               </div>
               <div className="flex space-x-2">
                 <Button
                   onClick={editingNews ? handleSaveEdit : handleAddNews}
+                  disabled={isSubmitting}
                   className="bg-primary hover:bg-primary/90"
                 >
-                  <Save className="h-4 w-4 mr-2" />
+                  {isSubmitting ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <Save className="h-4 w-4 mr-2" />
+                  )}
                   {editingNews ? 'Salvar' : 'Adicionar'}
                 </Button>
                 <Button
                   variant="outline"
                   onClick={handleCancelEdit}
+                  disabled={isSubmitting}
                 >
                   <X className="h-4 w-4 mr-2" />
                   Cancelar
@@ -276,7 +302,7 @@ export default function NewsSection() {
                 Nenhuma notícia disponível
               </h3>
               <p className="text-muted-foreground">
-                Adicione a primeira notícia para começar
+                {canEdit ? 'Adicione a primeira notícia para começar' : 'Aguarde novas notícias'}
               </p>
             </CardContent>
           </Card>
@@ -304,35 +330,44 @@ export default function NewsSection() {
                       <div className="flex items-center space-x-4 text-sm text-muted-foreground">
                         <div className="flex items-center space-x-1">
                           <Calendar className="h-4 w-4" />
-                          <span>{new Date(newsItem.date).toLocaleDateString('pt-BR')}</span>
+                          <span>{new Date(newsItem.created_at).toLocaleDateString('pt-BR')}</span>
                         </div>
                         <div className="flex items-center space-x-1">
                           <Clock className="h-4 w-4" />
-                          <span>{new Date(newsItem.date).toLocaleTimeString('pt-BR', { 
+                          <span>{new Date(newsItem.created_at).toLocaleTimeString('pt-BR', { 
                             hour: '2-digit', 
                             minute: '2-digit' 
                           })}</span>
                         </div>
+                        {newsItem.profiles && (
+                          <div className="text-xs text-muted-foreground">
+                            Por: {newsItem.profiles.name || newsItem.profiles.email}
+                          </div>
+                        )}
                       </div>
                     </div>
-                    <div className="flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleEditNews(newsItem)}
-                        className="h-8 w-8 p-0"
-                      >
-                        <Edit3 className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDeleteNews(newsItem.id)}
-                        className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
+                    {canEdit && (
+                      <div className="flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleEditNews(newsItem)}
+                          className="h-8 w-8 p-0"
+                          title="Editar notícia"
+                        >
+                          <Edit3 className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDeleteNews(newsItem.id)}
+                          className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                          title="Excluir notícia"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 </CardHeader>
                 <CardContent>
