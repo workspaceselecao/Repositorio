@@ -75,18 +75,46 @@ export async function POST(request) {
       }, { status: 400 })
     }
 
-    // Verificar se email já existe (método mais simples)
-    const { data: existingUsers } = await supabaseAdmin
+    // Verificar se email já existe na tabela users
+    console.log('Verificando se email já existe na tabela users...')
+    const { data: existingUsers, error: checkError } = await supabaseAdmin
       .from('users')
-      .select('id')
+      .select('id, email')
       .eq('email', email)
       .limit(1)
 
+    console.log('Usuários encontrados na tabela:', existingUsers)
+    console.log('Erro na verificação da tabela:', checkError)
+
     if (existingUsers && existingUsers.length > 0) {
+      console.log('Email já existe na tabela users:', email)
       return Response.json({ 
         error: 'Este email já está em uso',
         code: 'EMAIL_EXISTS'
       }, { status: 409 })
+    }
+
+    // Verificar se email já existe no Auth (método alternativo)
+    console.log('Verificando se email já existe no Auth...')
+    try {
+      const { data: authUsers, error: authCheckError } = await supabaseAdmin.auth.admin.listUsers()
+      
+      if (authCheckError) {
+        console.error('Erro ao verificar usuários no Auth:', authCheckError)
+      } else {
+        const emailExistsInAuth = authUsers?.users?.some(user => user.email === email)
+        console.log('Email existe no Auth:', emailExistsInAuth)
+        
+        if (emailExistsInAuth) {
+          return Response.json({ 
+            error: 'Este email já está cadastrado no sistema',
+            code: 'EMAIL_EXISTS_IN_AUTH'
+          }, { status: 409 })
+        }
+      }
+    } catch (authError) {
+      console.error('Erro ao verificar Auth:', authError)
+      // Continuar mesmo com erro na verificação do Auth
     }
 
     // Criar usuário no Supabase Auth
