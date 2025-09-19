@@ -5,7 +5,7 @@ import { motion } from 'framer-motion'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card'
 import { Button } from './ui/button'
 import { Badge } from './ui/badge'
-import { useNews } from '../hooks/useNews'
+import { useCache } from '../contexts/CacheContext'
 import { useAuth } from '../contexts/AuthContext'
 import { 
   Newspaper, 
@@ -25,11 +25,11 @@ export default function NewsSection({ isAdminView = false }) {
   const { 
     news, 
     loading, 
-    error, 
-    createNews, 
-    updateNews, 
-    deleteNews 
-  } = useNews(isAdminView)
+    isLoaded,
+    addNews,
+    updateNews: updateNewsCache,
+    removeNews: removeNewsCache
+  } = useCache()
   
   const [isEditing, setIsEditing] = useState(false)
   const [editingNews, setEditingNews] = useState(null)
@@ -42,11 +42,27 @@ export default function NewsSection({ isAdminView = false }) {
 
     try {
       setIsSubmitting(true)
-      await createNews({
-        title: newNews.title,
-        content: newNews.content,
-        priority: newNews.priority
+      
+      // Criar notícia no banco
+      const response = await fetch('/api/news', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...newNews,
+          user_id: user.id
+        })
       })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Erro ao criar notícia')
+      }
+
+      const result = await response.json()
+      
+      // Atualizar cache local
+      addNews(result.data)
+      
       setNewNews({ title: '', content: '', priority: 'medium' })
       setIsEditing(false)
     } catch (error) {
@@ -68,11 +84,29 @@ export default function NewsSection({ isAdminView = false }) {
 
     try {
       setIsSubmitting(true)
-      await updateNews(editingNews.id, {
-        title: editingNews.title,
-        content: editingNews.content,
-        priority: editingNews.priority
+      
+      // Atualizar notícia no banco
+      const response = await fetch(`/api/news/${editingNews.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: editingNews.title,
+          content: editingNews.content,
+          priority: editingNews.priority,
+          user_id: user.id
+        })
       })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Erro ao atualizar notícia')
+      }
+
+      const result = await response.json()
+      
+      // Atualizar cache local
+      updateNewsCache(result.data)
+      
       setEditingNews(null)
       setIsEditing(false)
     } catch (error) {
@@ -87,7 +121,18 @@ export default function NewsSection({ isAdminView = false }) {
     if (!confirm('Tem certeza que deseja excluir esta notícia?')) return
 
     try {
-      await deleteNews(id)
+      // Excluir notícia do banco
+      const response = await fetch(`/api/news/${id}`, {
+        method: 'DELETE'
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Erro ao excluir notícia')
+      }
+
+      // Atualizar cache local
+      removeNewsCache(id)
     } catch (error) {
       console.error('Erro ao excluir notícia:', error)
     }
@@ -141,24 +186,12 @@ export default function NewsSection({ isAdminView = false }) {
   // Verificar se o usuário pode editar notícias
   const canEdit = profile?.role === 'ADMIN'
 
-  if (loading) {
+  if (loading && !isLoaded) {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="text-center">
           <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
           <p className="text-muted-foreground">Carregando notícias...</p>
-        </div>
-      </div>
-    )
-  }
-
-  if (error) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <div className="text-center">
-          <AlertCircle className="h-8 w-8 text-destructive mx-auto mb-4" />
-          <p className="text-destructive mb-2">Erro ao carregar notícias</p>
-          <p className="text-muted-foreground text-sm">{error}</p>
         </div>
       </div>
     )

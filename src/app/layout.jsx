@@ -1,6 +1,6 @@
 import './globals.css'
 import { AuthProvider  } from '../contexts/AuthContext'
-import { DataProvider  } from '../contexts/DataContext'
+import { CacheProvider } from '../contexts/CacheContext'
 import { ErrorBoundary  } from '../components/ErrorBoundary'
 import { EnvironmentCheck  } from '../components/EnvironmentCheck'
 import NavigationDebug from '../components/NavigationDebug'
@@ -44,12 +44,12 @@ export default function RootLayout({
             <EnvironmentCheck>
               <FocusProvider>
                 <AuthProvider>
-                  <DataProvider>
+                  <CacheProvider>
                     {children}
                     <NavigationDebug />
                     <FocusIndicator />
                     <Toaster />
-                  </DataProvider>
+                  </CacheProvider>
                 </AuthProvider>
               </FocusProvider>
             </EnvironmentCheck>

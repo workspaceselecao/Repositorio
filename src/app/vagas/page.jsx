@@ -6,6 +6,7 @@ import toast from 'react-hot-toast'
 import DashboardLayout from '../../components/DashboardLayout'
 import ListaVagas from '../../components/ListaVagas'
 import ImportarDados from '../../components/ImportarDados'
+import { useCache } from '../../contexts/CacheContext'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card'
 import { Button } from '../../components/ui/button'
 import { Badge } from '../../components/ui/badge'
@@ -19,6 +20,7 @@ import {
 } from '@heroicons/react/24/outline'
 
 export default function VagasPage() {
+  const { vagas, clientes, sites, loading, isLoaded } = useCache()
   const [showImport, setShowImport] = useState(false)
   const [vagasParaExport, setVagasParaExport] = useState([])
   const [searchTerm, setSearchTerm] = useState('')

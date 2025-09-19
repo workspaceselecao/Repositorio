@@ -2,7 +2,7 @@
 
 import DashboardLayout from '../../components/DashboardLayout'
 import { ProtectedRoute } from '../../components/ProtectedRoute'
-import { useData } from '../../contexts/DataContext'
+import { useCache } from '../../contexts/CacheContext'
 import { useMemo } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card'
 import { Button } from '../../components/ui/button'
@@ -24,7 +24,7 @@ import {
 } from 'lucide-react'
 
 export default function DashboardPage() {
-  const { vagas, clientes, loading } = useData()
+  const { vagas, clientes, loading, isLoaded } = useCache()
 
   // Calcular totais
   const totalVagas = useMemo(() => vagas.length, [vagas])

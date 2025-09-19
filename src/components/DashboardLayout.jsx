@@ -1,6 +1,7 @@
 'use client'
 
 import { useAuth } from '../contexts/AuthContext'
+import { useCache } from '../contexts/CacheContext'
 import Sidebar from './Sidebar'
 import InstallPWA from './InstallPWA'
 import OfflineIndicator from './OfflineIndicator'
@@ -8,6 +9,7 @@ import { useEffect } from 'react'
 
 export default function DashboardLayout({ children, requiredRole = null }) {
   const { user, profile, loading } = useAuth()
+  const { loading: cacheLoading, isLoaded } = useCache()
 
   // Verificar se o usuário tem a permissão necessária
   const hasPermission = () => {
@@ -16,13 +18,15 @@ export default function DashboardLayout({ children, requiredRole = null }) {
     return profile.role === requiredRole
   }
 
-  // Mostrar loading enquanto carrega
-  if (loading) {
+  // Mostrar loading enquanto carrega autenticação ou cache
+  if (loading || (user && !isLoaded && cacheLoading)) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Carregando...</p>
+          <p className="mt-4 text-gray-600">
+            {loading ? 'Carregando...' : 'Carregando dados...'}
+          </p>
         </div>
       </div>
     )
