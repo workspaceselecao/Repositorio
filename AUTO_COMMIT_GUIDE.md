@@ -16,8 +16,15 @@ Sistema automatizado para fazer commits e push no Git com facilidade através do
 
 ### **2. Via Terminal**
 
+**Windows (PowerShell):**
+```powershell
+# Usar o script PowerShell
+.\auto-commit.ps1 "sua mensagem de commit"
+```
+
+**Linux/Mac (Bash):**
 ```bash
-# Usar o script diretamente
+# Usar o script bash
 ./auto-commit.sh "sua mensagem de commit"
 ```
 
@@ -25,7 +32,8 @@ Sistema automatizado para fazer commits e push no Git com facilidade através do
 
 | Tarefa | Descrição |
 |--------|-----------|
-| **Auto Commit** | Adiciona, commita e faz push automaticamente |
+| **Auto Commit (PowerShell)** | Adiciona, commita e faz push (Windows) |
+| **Auto Commit (Bash)** | Adiciona, commita e faz push (Linux/Mac) |
 | **Git Status** | Mostra o status do repositório |
 | **Git Add All** | Adiciona todos os arquivos modificados |
 | **Git Commit** | Faz commit com mensagem personalizada |
