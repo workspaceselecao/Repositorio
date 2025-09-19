@@ -23,31 +23,91 @@ export default function NovoUsuarioForm({ onSuccess }) {
     setError('')
     setSuccess('')
 
-    const { data, error: createError } = await createUser(
-      formData.email,
-      formData.password,
-      formData.name,
-      formData.role
-    )
+    // Validar formulário antes de enviar
+    const validationErrors = validateForm()
+    if (validationErrors.length > 0) {
+      setError(validationErrors.join('. '))
+      setLoading(false)
+      return
+    }
 
-    if (createError) {
-      setError(createError.message || createError)
+    try {
+      const { data, error: createError } = await createUser(
+        formData.email,
+        formData.password,
+        formData.name,
+        formData.role
+      )
+
+      if (createError) {
+        // Tratar diferentes tipos de erro
+        let errorMessage = createError.message || createError
+        
+        if (typeof createError === 'string') {
+          errorMessage = createError
+        } else if (createError.error) {
+          errorMessage = createError.error
+        }
+
+        setError(errorMessage)
+        setLoading(false)
+      } else if (data?.success) {
+        setSuccess(data.message || `Usuário ${formData.name} criado com sucesso!`)
+        setFormData({ name: '', email: '', password: '', role: 'RH' })
+        setLoading(false)
+        
+        // Chamar onSuccess após um pequeno delay para mostrar a mensagem
+        setTimeout(() => {
+          onSuccess()
+        }, 2000)
+      } else {
+        setError('Erro desconhecido ao criar usuário')
+        setLoading(false)
+      }
+    } catch (error) {
+      console.error('Erro no handleSubmit:', error)
+      setError('Erro de conexão. Verifique sua internet e tente novamente.')
       setLoading(false)
-    } else {
-      setSuccess(data?.message || `Usuário ${formData.name} criado com sucesso!`)
-      setFormData({ name: '', email: '', password: '', role: 'RH' })
-      setLoading(false)
-      
-      // Chamar onSuccess após um pequeno delay para mostrar a mensagem
-      setTimeout(() => {
-        onSuccess()
-      }, 2000)
     }
   }
 
   const handleChange = (e) => {
     const { name, value } = e.target
     setFormData(prev => ({ ...prev, [name]: value }))
+    
+    // Limpar erros quando o usuário começar a digitar
+    if (error) {
+      setError('')
+    }
+  }
+
+  const validateForm = () => {
+    const errors = []
+
+    if (!formData.name.trim()) {
+      errors.push('Nome é obrigatório')
+    }
+
+    if (!formData.email.trim()) {
+      errors.push('Email é obrigatório')
+    } else {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+      if (!emailRegex.test(formData.email)) {
+        errors.push('Formato de email inválido')
+      }
+    }
+
+    if (!formData.password) {
+      errors.push('Senha é obrigatória')
+    } else if (formData.password.length < 6) {
+      errors.push('Senha deve ter pelo menos 6 caracteres')
+    }
+
+    if (!formData.role) {
+      errors.push('Tipo de usuário é obrigatório')
+    }
+
+    return errors
   }
 
   return (
@@ -145,13 +205,37 @@ export default function NovoUsuarioForm({ onSuccess }) {
         </select>
       </div>
 
-      <button
-        type="submit"
-        disabled={loading}
-        className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
-      >
-        {loading ? 'Criando...' : 'Criar Usuário'}
-      </button>
+      <div className="flex space-x-3">
+        <button
+          type="button"
+          onClick={() => {
+            setFormData({ name: '', email: '', password: '', role: 'RH' })
+            setError('')
+            setSuccess('')
+          }}
+          disabled={loading}
+          className="flex-1 flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+        >
+          Limpar
+        </button>
+        <button
+          type="submit"
+          disabled={loading}
+          className="flex-1 flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+        >
+          {loading ? (
+            <div className="flex items-center">
+              <svg className="animate-spin -ml-1 mr-3 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              Criando...
+            </div>
+          ) : (
+            'Criar Usuário'
+          )}
+        </button>
+      </div>
     </form>
     </div>
   )
