@@ -1,14 +1,26 @@
 import { createClient } from '@supabase/supabase-js'
 
 // Cliente com service role para operações administrativas
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-)
+let supabaseAdmin
+
+try {
+  supabaseAdmin = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_ROLE_KEY
+  )
+  console.log('✅ Cliente Supabase criado com sucesso')
+} catch (error) {
+  console.error('❌ Erro ao criar cliente Supabase:', error)
+}
 
 // GET - Listar usuários
 export async function GET(request) {
   try {
+    if (!supabaseAdmin) {
+      console.error('❌ Cliente Supabase não foi criado')
+      return Response.json({ error: 'Cliente Supabase não configurado' }, { status: 500 })
+    }
+    
     const { data: users, error } = await supabaseAdmin
       .from('users')
       .select('*')
@@ -29,6 +41,11 @@ export async function GET(request) {
 // POST - Criar usuário
 export async function POST(request) {
   try {
+    if (!supabaseAdmin) {
+      console.error('❌ Cliente Supabase não foi criado')
+      return Response.json({ error: 'Cliente Supabase não configurado' }, { status: 500 })
+    }
+    
     // Verificar se a Service Role Key está configurada
     if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
       console.error('SUPABASE_SERVICE_ROLE_KEY não configurada')
