@@ -6,24 +6,8 @@ import { useData } from '../../contexts/DataContext'
 import { useMemo } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card'
 import { Button } from '../../components/ui/button'
-import ChartDemo from '../../components/ChartDemo'
+import NewsSection from '../../components/NewsSection'
 import { motion } from 'framer-motion'
-import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-  LineChart,
-  Line,
-  Area,
-  AreaChart
-} from 'recharts'
 import { 
   Users, 
   Briefcase, 
@@ -46,23 +30,6 @@ export default function DashboardPage() {
   const totalVagas = useMemo(() => vagas.length, [vagas])
   const totalClientes = useMemo(() => clientes.length, [clientes])
 
-  // Dados para gráficos
-  const chartData = useMemo(() => [
-    { name: 'Jan', vagas: 12, clientes: 8, aplicacoes: 45 },
-    { name: 'Fev', vagas: 19, clientes: 12, aplicacoes: 67 },
-    { name: 'Mar', vagas: 15, clientes: 9, aplicacoes: 52 },
-    { name: 'Abr', vagas: 22, clientes: 15, aplicacoes: 78 },
-    { name: 'Mai', vagas: 18, clientes: 11, aplicacoes: 63 },
-    { name: 'Jun', vagas: 25, clientes: 18, aplicacoes: 89 },
-  ], [])
-
-  const pieData = useMemo(() => [
-    { name: 'Tecnologia', value: 35, color: 'hsl(var(--chart-1))' },
-    { name: 'Vendas', value: 25, color: 'hsl(var(--chart-2))' },
-    { name: 'Marketing', value: 20, color: 'hsl(var(--chart-3))' },
-    { name: 'RH', value: 15, color: 'hsl(var(--chart-4))' },
-    { name: 'Outros', value: 5, color: 'hsl(var(--chart-5))' },
-  ], [])
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -261,84 +228,9 @@ export default function DashboardPage() {
                 ))}
               </motion.div>
 
-              {/* Charts Section */}
-              <motion.div 
-                variants={containerVariants}
-                className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8"
-              >
-                {/* Bar Chart */}
-                <motion.div variants={itemVariants}>
-                  <Card className="h-96">
-                    <CardHeader>
-                      <CardTitle className="flex items-center space-x-2">
-                        <BarChart3 className="h-5 w-5 text-chart-1" />
-                        <span>Evolução Mensal</span>
-                      </CardTitle>
-                      <CardDescription>
-                        Vagas e clientes nos últimos 6 meses
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <ResponsiveContainer width="100%" height={250}>
-                        <BarChart data={chartData}>
-                          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--muted-foreground)/0.2)" />
-                          <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" />
-                          <YAxis stroke="hsl(var(--muted-foreground))" />
-                          <Tooltip 
-                            contentStyle={{
-                              backgroundColor: 'hsl(var(--card))',
-                              border: '1px solid hsl(var(--border))',
-                              borderRadius: '8px'
-                            }}
-                          />
-                          <Bar dataKey="vagas" fill="hsl(var(--chart-1))" radius={[4, 4, 0, 0]} />
-                          <Bar dataKey="clientes" fill="hsl(var(--chart-2))" radius={[4, 4, 0, 0]} />
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-
-                {/* Pie Chart */}
-                <motion.div variants={itemVariants}>
-                  <Card className="h-96">
-                    <CardHeader>
-                      <CardTitle className="flex items-center space-x-2">
-                        <Target className="h-5 w-5 text-chart-3" />
-                        <span>Distribuição por Categoria</span>
-                      </CardTitle>
-                      <CardDescription>
-                        Percentual de vagas por área
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <ResponsiveContainer width="100%" height={250}>
-                        <PieChart>
-                          <Pie
-                            data={pieData}
-                            cx="50%"
-                            cy="50%"
-                            innerRadius={60}
-                            outerRadius={100}
-                            paddingAngle={5}
-                            dataKey="value"
-                          >
-                            {pieData.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={entry.color} />
-                            ))}
-                          </Pie>
-                          <Tooltip 
-                            contentStyle={{
-                              backgroundColor: 'hsl(var(--card))',
-                              border: '1px solid hsl(var(--border))',
-                              borderRadius: '8px'
-                            }}
-                          />
-                        </PieChart>
-                      </ResponsiveContainer>
-                    </CardContent>
-                  </Card>
-                </motion.div>
+              {/* News Section */}
+              <motion.div variants={itemVariants}>
+                <NewsSection />
               </motion.div>
 
               {/* Quick Actions */}
@@ -394,10 +286,6 @@ export default function DashboardPage() {
                 </div>
               </motion.div>
 
-              {/* Chart Demo */}
-              <motion.div variants={itemVariants}>
-                <ChartDemo />
-              </motion.div>
 
               {/* Recent Activity */}
               <motion.div variants={itemVariants}>

@@ -7,6 +7,7 @@ import DashboardLayout from '../../components/DashboardLayout'
 import UserManagement from '../../components/UserManagement'
 import ExportExcel from '../../components/ExportExcel'
 import ConfigErrorBoundary from '../../components/ConfigErrorBoundary'
+import NewsSection from '../../components/NewsSection'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card'
 import { Button } from '../../components/ui/button'
 import { Badge } from '../../components/ui/badge'
@@ -20,7 +21,8 @@ import {
   ChartBarIcon,
   DocumentTextIcon,
   ClockIcon,
-  ExclamationTriangleIcon
+  ExclamationTriangleIcon,
+  NewspaperIcon
 } from '@heroicons/react/24/outline'
 import { useVagasCache } from '../../hooks/useSupabaseCache'
 import { useCacheManager } from '../../hooks/useCache'
@@ -130,8 +132,9 @@ export default function ConfiguracoesPage() {
 
   const tabs = [
     { id: 'usuarios', label: 'Usuários', icon: UsersIcon, color: 'chart-1' },
-    { id: 'backup', label: 'Backup', icon: ArrowDownTrayIcon, color: 'chart-2' },
-    { id: 'sistema', label: 'Sistema', icon: Cog6ToothIcon, color: 'chart-3' }
+    { id: 'noticias', label: 'Notícias', icon: NewspaperIcon, color: 'chart-2' },
+    { id: 'backup', label: 'Backup', icon: ArrowDownTrayIcon, color: 'chart-3' },
+    { id: 'sistema', label: 'Sistema', icon: Cog6ToothIcon, color: 'chart-4' }
   ]
 
   return (
@@ -309,6 +312,23 @@ export default function ConfiguracoesPage() {
                       </CardHeader>
                       <CardContent>
                         <UserManagement />
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {activeTab === 'noticias' && (
+                    <Card className="border-0 shadow-lg">
+                      <CardHeader>
+                        <CardTitle className="flex items-center space-x-2">
+                          <NewspaperIcon className="h-5 w-5 text-chart-2" />
+                          <span>Gerenciar Notícias do Dashboard</span>
+                        </CardTitle>
+                        <CardDescription>
+                          Configure as notícias que aparecem na página inicial do sistema
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <NewsSection />
                       </CardContent>
                     </Card>
                   )}
