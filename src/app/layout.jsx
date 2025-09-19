@@ -4,6 +4,7 @@ import { DataProvider  } from '../contexts/DataContext'
 import { ErrorBoundary  } from '../components/ErrorBoundary'
 import { EnvironmentCheck  } from '../components/EnvironmentCheck'
 import NavigationDebug from '../components/NavigationDebug'
+import { ThemeProvider } from '../components/ui/theme-provider'
 
 export const metadata = {
   title: 'Repositório de Vagas',
@@ -29,18 +30,25 @@ export default function RootLayout({
   children
 }) {
   return (
-    <html lang="pt-BR">
+    <html lang="pt-BR" suppressHydrationWarning>
       <body className="antialiased">
-        <ErrorBoundary>
-          <EnvironmentCheck>
-                <AuthProvider>
-                  <DataProvider>
-                    {children}
-                    <NavigationDebug />
-                  </DataProvider>
-                </AuthProvider>
-          </EnvironmentCheck>
-        </ErrorBoundary>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <ErrorBoundary>
+            <EnvironmentCheck>
+                  <AuthProvider>
+                    <DataProvider>
+                      {children}
+                      <NavigationDebug />
+                    </DataProvider>
+                  </AuthProvider>
+            </EnvironmentCheck>
+          </ErrorBoundary>
+        </ThemeProvider>
       </body>
     </html>
   )
