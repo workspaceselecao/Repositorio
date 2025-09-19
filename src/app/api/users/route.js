@@ -29,7 +29,18 @@ export async function GET(request) {
 // POST - Criar usuário
 export async function POST(request) {
   try {
+    // Verificar se a Service Role Key está configurada
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      console.error('SUPABASE_SERVICE_ROLE_KEY não configurada')
+      return Response.json({ 
+        error: 'Configuração do servidor incompleta. Service Role Key não encontrada.',
+        code: 'MISSING_SERVICE_ROLE_KEY'
+      }, { status: 500 })
+    }
+
     const { email, password, name, role } = await request.json()
+    
+    console.log('Dados recebidos para criação:', { email, name, role })
 
     // Validações básicas
     if (!email || !password || !name || !role) {
@@ -79,6 +90,7 @@ export async function POST(request) {
     }
 
     // Criar usuário no Supabase Auth
+    console.log('Criando usuário no Supabase Auth...')
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email,
       password,
@@ -100,7 +112,10 @@ export async function POST(request) {
       }, { status: 400 })
     }
 
+    console.log('Usuário criado no Auth com sucesso:', authData?.user?.id)
+
     // Criar perfil na tabela users
+    console.log('Criando perfil na tabela users...')
     const { data: profileData, error: profileError } = await supabaseAdmin
       .from('users')
       .insert([{
@@ -113,18 +128,24 @@ export async function POST(request) {
       .single()
 
     if (profileError) {
+      console.error('Erro ao criar perfil do usuário:', profileError)
+      
       // Limpar usuário do auth se falhou
       try {
+        console.log('Limpando usuário do auth após falha no perfil...')
         await supabaseAdmin.auth.admin.deleteUser(authData.user.id)
+        console.log('Usuário removido do auth com sucesso')
       } catch (deleteError) {
         console.error('Erro ao limpar usuário do auth:', deleteError)
       }
       
       return Response.json({ 
-        error: 'Erro ao criar perfil do usuário',
+        error: `Erro ao criar perfil do usuário: ${profileError.message}`,
         code: 'PROFILE_ERROR'
       }, { status: 500 })
     }
+
+    console.log('Perfil criado com sucesso:', profileData)
 
     return Response.json({ 
       success: true,
