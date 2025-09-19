@@ -3,7 +3,7 @@
 import { useAuth } from '../contexts/AuthContext'
 import { useData } from '../contexts/DataContext'
 import { useNavigation } from '../hooks/useNavigation'
-import { SmartLoading } from './SmartLoading'
+import { PracticalLoading } from './PracticalLoading'
 import { useEffect } from 'react'
 
 export function ProtectedRoute({ children }) {
@@ -20,7 +20,12 @@ export function ProtectedRoute({ children }) {
   // Se está autenticando ou redirecionando, mostrar loading
   if (loading || isRedirecting) {
     return (
-      <SmartLoading loading={true}>
+      <PracticalLoading 
+        loading={true}
+        minLoadingTime={500}
+        maxLoadingTime={5000}
+        showProgress={isRedirecting}
+      >
         <div className="min-h-screen flex items-center justify-center">
           <div className="text-center">
             <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500 mx-auto"></div>
@@ -29,7 +34,7 @@ export function ProtectedRoute({ children }) {
             </p>
           </div>
         </div>
-      </SmartLoading>
+      </PracticalLoading>
     )
   }
 
@@ -37,11 +42,16 @@ export function ProtectedRoute({ children }) {
     return null
   }
 
-  // Usar SmartLoading para dados
+  // Usar PracticalLoading para dados com timeout
   return (
-    <SmartLoading loading={dataLoading}>
+    <PracticalLoading 
+      loading={dataLoading}
+      minLoadingTime={300}
+      maxLoadingTime={8000}
+      showProgress={true}
+    >
       {children}
-    </SmartLoading>
+    </PracticalLoading>
   )
 }
 

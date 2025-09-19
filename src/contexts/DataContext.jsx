@@ -3,7 +3,7 @@
 import { createContext, useContext, useEffect, useState, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from './AuthContext'
-import { useStableData } from '../hooks/useStableData'
+import { useOptimizedLoading } from '../hooks/useOptimizedLoading'
 
 const DataContext = createContext(undefined)
 
@@ -64,13 +64,15 @@ export function DataProvider({ children }) {
     }
   }, [user])
 
-  // Usar o hook estável para gerenciar dados
-  const { data, loading, error, lastUpdated, refresh } = useStableData(fetchAllData, {
+  // Usar o hook otimizado para gerenciar dados
+  const { data, loading, error, lastUpdated, refresh } = useOptimizedLoading(fetchAllData, {
     key: `repositorio_data_${user?.id || 'anonymous'}`,
     ttl: 5 * 60 * 1000, // 5 minutos
-    enablePersistence: true,
-    enableFocusRefresh: true,
-    refreshOnFocus: true
+    enableCache: true,
+    enableAutoRefresh: true,
+    refreshInterval: 2 * 60 * 1000, // 2 minutos
+    maxRetries: 3,
+    retryDelay: 1000
   })
 
   // Função para carregar todos os dados (mantida para compatibilidade)

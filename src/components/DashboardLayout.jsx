@@ -7,25 +7,13 @@ import OfflineIndicator from './OfflineIndicator'
 import { useEffect } from 'react'
 
 export default function DashboardLayout({ children, requiredRole = null }) {
-  const { user, profile, loading } = useAuth()
+  const { user, profile } = useAuth()
 
   // Verificar se o usuário tem a permissão necessária
   const hasPermission = () => {
     if (!requiredRole) return true
     if (!profile) return false
     return profile.role === requiredRole
-  }
-
-  // Mostrar loading enquanto carrega
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Carregando...</p>
-        </div>
-      </div>
-    )
   }
 
   // Verificar se o usuário está logado
