@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { useRenderTracker } from '../hooks/useDebounce'
 
 export default function PerformanceMonitor({ children, componentName = 'PerformanceMonitor' }) {
   const [metrics, setMetrics] = useState({
@@ -12,50 +11,25 @@ export default function PerformanceMonitor({ children, componentName = 'Performa
     isSlow: false
   })
   
-  const trackRender = useRenderTracker(componentName, 30)
   const renderTimes = useRef([])
   const startTime = useRef(Date.now())
   const lastRenderTime = useRef(Date.now())
+  const renderCount = useRef(0)
 
-  // Track render performance
-  useEffect(() => {
-    const now = Date.now()
-    const renderTime = now - lastRenderTime.current
-    
-    renderTimes.current.push(renderTime)
-    if (renderTimes.current.length > 20) {
-      renderTimes.current.shift()
-    }
-    
-    const avgRenderTime = renderTimes.current.reduce((a, b) => a + b, 0) / renderTimes.current.length
-    const isSlow = avgRenderTime > 100 // Considerar lento se > 100ms
-    
-    setMetrics(prev => ({
-      ...prev,
-      renderCount: prev.renderCount + 1,
-      lastRenderTime: renderTime,
-      avgRenderTime: Math.round(avgRenderTime),
-      isSlow
-    }))
-    
-    lastRenderTime.current = now
-    trackRender()
-  })
-
-  // Monitor memory usage
+  // Monitor memory usage apenas uma vez por minuto
   useEffect(() => {
     const checkMemory = () => {
       if ('memory' in performance) {
         const memory = performance.memory
         setMetrics(prev => ({
           ...prev,
-          memoryUsage: Math.round(memory.usedJSHeapSize / 1024 / 1024) // MB
+          memoryUsage: Math.round(memory.usedJSHeapSize / 1024 / 1020) // MB
         }))
       }
     }
 
     checkMemory()
-    const interval = setInterval(checkMemory, 5000) // Check every 5 seconds
+    const interval = setInterval(checkMemory, 60000) // Check every minute
 
     return () => clearInterval(interval)
   }, [])
@@ -68,8 +42,7 @@ export default function PerformanceMonitor({ children, componentName = 'Performa
         // Reset metrics when page becomes visible
         setMetrics(prev => ({
           ...prev,
-          renderCount: 0,
-          lastRenderTime: 0
+          renderCount: 0
         }))
         renderTimes.current = []
         startTime.current = Date.now()
@@ -98,18 +71,6 @@ export default function PerformanceMonitor({ children, componentName = 'Performa
       window.removeEventListener('blur', handleBlur)
     }
   }, [])
-
-  // Show warning if performance is poor
-  useEffect(() => {
-    if (metrics.isSlow && metrics.renderCount > 10) {
-      console.warn('⚠️ Performance Warning:', {
-        component: componentName,
-        renderCount: metrics.renderCount,
-        avgRenderTime: metrics.avgRenderTime,
-        memoryUsage: metrics.memoryUsage
-      })
-    }
-  }, [metrics, componentName])
 
   // Development-only performance overlay
   if (process.env.NODE_ENV === 'development' && metrics.renderCount > 0) {

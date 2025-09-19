@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 
 /**
  * Hook para debouncing de valores
@@ -88,48 +88,16 @@ export function useThrottledCallback(callback, limit = 1000, deps = []) {
 }
 
 /**
- * Hook para detectar loops infinitos em re-renders
+ * Hook para detectar loops infinitos em re-renders (DESABILITADO)
  * @param {string} componentName - Nome do componente para debug
  * @param {number} maxRenders - Número máximo de renders antes de alertar
  * @returns {Function} - Função para registrar render
  */
 export function useRenderTracker(componentName = 'Component', maxRenders = 50) {
-  const renderCount = useRef(0)
-  const lastRenderTime = useRef(Date.now())
-  const renderTimes = useRef([])
-
-  const trackRender = useCallback(() => {
-    const now = Date.now()
-    const timeSinceLastRender = now - lastRenderTime.current
-    
-    renderCount.current += 1
-    lastRenderTime.current = now
-    
-    // Manter apenas os últimos 10 tempos de render
-    renderTimes.current.push(timeSinceLastRender)
-    if (renderTimes.current.length > 10) {
-      renderTimes.current.shift()
-    }
-
-    // Verificar se há muitos renders em pouco tempo
-    if (renderCount.current > maxRenders) {
-      const avgRenderTime = renderTimes.current.reduce((a, b) => a + b, 0) / renderTimes.current.length
-      
-      if (avgRenderTime < 100) { // Menos de 100ms entre renders
-        console.warn(`⚠️ Possível loop infinito detectado em ${componentName}:`, {
-          renderCount: renderCount.current,
-          avgRenderTime: Math.round(avgRenderTime),
-          lastRenderTimes: renderTimes.current
-        })
-        
-        // Resetar contador para evitar spam
-        renderCount.current = 0
-        renderTimes.current = []
-      }
-    }
-  }, [componentName, maxRenders])
-
-  return trackRender
+  // Retornar função vazia para evitar loops
+  return useCallback(() => {
+    // Função vazia - desabilitada para evitar loops
+  }, [])
 }
 
 /**

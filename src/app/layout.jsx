@@ -4,7 +4,6 @@ import { DataProvider  } from '../contexts/DataContext'
 import { ErrorBoundary  } from '../components/ErrorBoundary'
 import { EnvironmentCheck  } from '../components/EnvironmentCheck'
 import NavigationDebug from '../components/NavigationDebug'
-import PerformanceMonitor from '../components/PerformanceMonitor'
 import { FocusProvider, FocusIndicator } from '../components/FocusManager'
 import { ThemeProvider } from '../components/ui/theme-provider'
 import { Toaster } from '../components/ui/toaster'
@@ -44,16 +43,14 @@ export default function RootLayout({
           <ErrorBoundary>
             <EnvironmentCheck>
               <FocusProvider>
-                <PerformanceMonitor componentName="RootLayout">
-                  <AuthProvider>
-                    <DataProvider>
-                      {children}
-                      <NavigationDebug />
-                      <FocusIndicator />
-                      <Toaster />
-                    </DataProvider>
-                  </AuthProvider>
-                </PerformanceMonitor>
+                <AuthProvider>
+                  <DataProvider>
+                    {children}
+                    <NavigationDebug />
+                    <FocusIndicator />
+                    <Toaster />
+                  </DataProvider>
+                </AuthProvider>
               </FocusProvider>
             </EnvironmentCheck>
           </ErrorBoundary>
