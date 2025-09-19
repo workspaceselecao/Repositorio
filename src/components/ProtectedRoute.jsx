@@ -3,6 +3,7 @@
 import { useAuth } from '../contexts/AuthContext'
 import { useData } from '../contexts/DataContext'
 import { useNavigation } from '../hooks/useNavigation'
+import { SmartLoading } from './SmartLoading'
 import { useEffect } from 'react'
 
 export function ProtectedRoute({ children }) {
@@ -11,22 +12,24 @@ export function ProtectedRoute({ children }) {
   const { navigate } = useNavigation()
 
   useEffect(() => {
-    if (!loading && !user) {
+    if (!loading && !isRedirecting && !user) {
       navigate('/login')
     }
-  }, [user, loading, navigate])
+  }, [user, loading, isRedirecting, navigate])
 
-  // Mostrar loading enquanto está autenticando ou carregando dados
-  if (loading || isRedirecting || dataLoading) {
+  // Se está autenticando ou redirecionando, mostrar loading
+  if (loading || isRedirecting) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500 mx-auto"></div>
-          <p className="mt-4 text-gray-600">
-            {isRedirecting ? 'Redirecionando...' : 'Carregando...'}
-          </p>
+      <SmartLoading loading={true}>
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500 mx-auto"></div>
+            <p className="mt-4 text-gray-600">
+              {isRedirecting ? 'Redirecionando...' : 'Carregando...'}
+            </p>
+          </div>
         </div>
-      </div>
+      </SmartLoading>
     )
   }
 
@@ -34,7 +37,12 @@ export function ProtectedRoute({ children }) {
     return null
   }
 
-  return <>{children}</>
+  // Usar SmartLoading para dados
+  return (
+    <SmartLoading loading={dataLoading}>
+      {children}
+    </SmartLoading>
+  )
 }
 
 export function PublicRoute({ children }) {

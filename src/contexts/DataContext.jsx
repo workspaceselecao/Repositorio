@@ -3,82 +3,82 @@
 import { createContext, useContext, useEffect, useState, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from './AuthContext'
+import { useStableData } from '../hooks/useStableData'
 
 const DataContext = createContext(undefined)
 
 export function DataProvider({ children }) {
   const { user } = useAuth()
-  const [data, setData] = useState({
-    vagas: [],
-    clientes: [],
-    sites: [],
-    users: [],
-    loading: true,
-    lastUpdated: null
-  })
   const [cacheVersion, setCacheVersion] = useState(0)
 
-  // Função para carregar todos os dados
-  const loadAllData = useCallback(async () => {
-    if (!user) {
-      setData(prev => ({ ...prev, loading: false }))
-      return
+  // Função para buscar todos os dados
+  const fetchAllData = useCallback(async (signal) => {
+    if (!user) return {
+      vagas: [],
+      clientes: [],
+      sites: [],
+      users: [],
+      loading: false,
+      lastUpdated: null
     }
 
-    // Evitar carregamento desnecessário se já estiver carregando
-    if (data.loading) {
-      return
+    // Carregar vagas
+    const { data: vagas, error: vagasError } = await supabase
+      .from('vagas')
+      .select('*')
+      .order('created_at', { ascending: false })
+
+    if (vagasError) throw vagasError
+
+    // Carregar usuários
+    const { data: users, error: usersError } = await supabase
+      .from('users')
+      .select('*')
+      .order('created_at', { ascending: false })
+
+    if (usersError) throw usersError
+
+    // Processar clientes a partir das vagas
+    const clientesMap = (vagas || []).reduce((acc, vaga) => {
+      const cliente = vaga.cliente
+      if (cliente) {
+        acc[cliente] = (acc[cliente] || 0) + 1
+      }
+      return acc
+    }, {})
+
+    const clientes = Object.entries(clientesMap)
+      .map(([nome, totalVagas]) => ({ nome, totalVagas }))
+      .sort((a, b) => a.nome.localeCompare(b.nome))
+
+    // Processar sites a partir das vagas
+    const sites = Array.from(new Set((vagas || []).map(v => v.site).filter(Boolean))).sort()
+
+    return {
+      vagas: vagas || [],
+      clientes,
+      sites,
+      users: users || [],
+      loading: false,
+      lastUpdated: new Date().toISOString()
     }
+  }, [user])
 
-    try {
-      setData(prev => ({ ...prev, loading: true }))
+  // Usar o hook estável para gerenciar dados
+  const { data, loading, error, lastUpdated, refresh } = useStableData(fetchAllData, {
+    key: `repositorio_data_${user?.id || 'anonymous'}`,
+    ttl: 5 * 60 * 1000, // 5 minutos
+    enablePersistence: true,
+    enableFocusRefresh: true,
+    refreshOnFocus: true
+  })
 
-      // Carregar vagas
-      const { data: vagas, error: vagasError } = await supabase
-        .from('vagas')
-        .select('*')
-        .order('created_at', { ascending: false })
-
-      if (vagasError) throw vagasError
-
-      // Carregar usuários
-      const { data: users, error: usersError } = await supabase
-        .from('users')
-        .select('*')
-        .order('created_at', { ascending: false })
-
-      if (usersError) throw usersError
-
-      // Processar clientes a partir das vagas
-      const clientesMap = (vagas || []).reduce((acc, vaga) => {
-        const cliente = vaga.cliente
-        if (cliente) {
-          acc[cliente] = (acc[cliente] || 0) + 1
-        }
-        return acc
-      }, {})
-
-      const clientes = Object.entries(clientesMap)
-        .map(([nome, totalVagas]) => ({ nome, totalVagas }))
-        .sort((a, b) => a.nome.localeCompare(b.nome))
-
-      // Processar sites a partir das vagas
-      const sites = Array.from(new Set((vagas || []).map(v => v.site).filter(Boolean))).sort()
-
-      setData({
-        vagas: vagas || [],
-        clientes,
-        sites,
-        users: users || [],
-        loading: false,
-        lastUpdated: new Date().toISOString()
-      })
-
-    } catch (error) {
-      console.error('Erro ao carregar dados:', error)
-      setData(prev => ({ ...prev, loading: false }))
+  // Função para carregar todos os dados (mantida para compatibilidade)
+  const loadAllData = useCallback(async (forceReload = false) => {
+    if (forceReload) {
+      refresh()
     }
-  }, [user, data.loading])
+  }, [refresh])
 
   // Função para invalidar cache
   const invalidateCache = useCallback(() => {
@@ -87,72 +87,49 @@ export function DataProvider({ children }) {
 
   // Função para adicionar vaga
   const addVaga = useCallback((novaVaga) => {
-    setData(prev => ({
-      ...prev,
-      vagas: [novaVaga, ...prev.vagas],
-      lastUpdated: new Date().toISOString()
-    }))
-    invalidateCache()
-  }, [invalidateCache])
+    // Atualizar dados localmente e recarregar
+    refresh()
+  }, [refresh])
 
   // Função para atualizar vaga
   const updateVaga = useCallback((vagaAtualizada) => {
-    setData(prev => ({
-      ...prev,
-      vagas: prev.vagas.map(v => v.id === vagaAtualizada.id ? vagaAtualizada : v),
-      lastUpdated: new Date().toISOString()
-    }))
-    invalidateCache()
-  }, [invalidateCache])
+    // Atualizar dados localmente e recarregar
+    refresh()
+  }, [refresh])
 
   // Função para remover vaga
   const removeVaga = useCallback((vagaId) => {
-    setData(prev => ({
-      ...prev,
-      vagas: prev.vagas.filter(v => v.id !== vagaId),
-      lastUpdated: new Date().toISOString()
-    }))
-    invalidateCache()
-  }, [invalidateCache])
+    // Atualizar dados localmente e recarregar
+    refresh()
+  }, [refresh])
 
   // Função para adicionar usuário
   const addUser = useCallback((novoUsuario) => {
-    setData(prev => ({
-      ...prev,
-      users: [novoUsuario, ...prev.users],
-      lastUpdated: new Date().toISOString()
-    }))
-    invalidateCache()
-  }, [invalidateCache])
+    // Atualizar dados localmente e recarregar
+    refresh()
+  }, [refresh])
 
   // Função para atualizar usuário
   const updateUser = useCallback((usuarioAtualizado) => {
-    setData(prev => ({
-      ...prev,
-      users: prev.users.map(u => u.id === usuarioAtualizado.id ? usuarioAtualizado : u),
-      lastUpdated: new Date().toISOString()
-    }))
-    invalidateCache()
-  }, [invalidateCache])
+    // Atualizar dados localmente e recarregar
+    refresh()
+  }, [refresh])
 
   // Função para remover usuário
   const removeUser = useCallback((usuarioId) => {
-    setData(prev => ({
-      ...prev,
-      users: prev.users.filter(u => u.id !== usuarioId),
-      lastUpdated: new Date().toISOString()
-    }))
-    invalidateCache()
-  }, [invalidateCache])
+    // Atualizar dados localmente e recarregar
+    refresh()
+  }, [refresh])
 
   // Função para obter vagas por cliente
   const getVagasByCliente = useCallback((clientes) => {
-    if (!clientes || clientes.length === 0) return []
+    if (!clientes || clientes.length === 0 || !data) return []
     return data.vagas.filter(vaga => clientes.includes(vaga.cliente))
-  }, [data.vagas])
+  }, [data])
 
   // Função para obter vagas filtradas
   const getVagasFiltradas = useCallback((filtros) => {
+    if (!data) return []
     return data.vagas.filter(vaga => {
       const matchSite = filtros.site ? vaga.site === filtros.site : true
       const matchCategoria = filtros.categoria ? vaga.categoria === filtros.categoria : true
@@ -160,19 +137,7 @@ export function DataProvider({ children }) {
       const matchProduto = filtros.produto ? vaga.produto === filtros.produto : true
       return matchSite && matchCategoria && matchCargo && matchProduto
     })
-  }, [data.vagas])
-
-  // Carregar dados quando o usuário mudar
-  useEffect(() => {
-    loadAllData()
-  }, [user]) // Usar apenas user como dependência para evitar loops
-
-  // Recarregar dados quando a versão do cache mudar
-  useEffect(() => {
-    if (cacheVersion > 0) {
-      loadAllData()
-    }
-  }, [cacheVersion]) // Usar apenas cacheVersion como dependência
+  }, [data])
 
   // Configurar atualizações em tempo real
   useEffect(() => {
@@ -189,7 +154,7 @@ export function DataProvider({ children }) {
         }, 
         (payload) => {
           console.log('Mudança detectada na tabela vagas:', payload)
-          invalidateCache()
+          refresh() // Usar refresh em vez de invalidateCache
         }
       )
       .subscribe()
@@ -204,7 +169,7 @@ export function DataProvider({ children }) {
         }, 
         (payload) => {
           console.log('Mudança detectada na tabela users:', payload)
-          invalidateCache()
+          refresh() // Usar refresh em vez de invalidateCache
         }
       )
       .subscribe()
@@ -214,16 +179,17 @@ export function DataProvider({ children }) {
       vagasSubscription.unsubscribe()
       usersSubscription.unsubscribe()
     }
-  }, [user, invalidateCache])
+  }, [user, refresh])
 
   const value = {
     // Dados
-    vagas: data.vagas,
-    clientes: data.clientes,
-    sites: data.sites,
-    users: data.users,
-    loading: data.loading,
-    lastUpdated: data.lastUpdated,
+    vagas: data?.vagas || [],
+    clientes: data?.clientes || [],
+    sites: data?.sites || [],
+    users: data?.users || [],
+    loading: loading,
+    lastUpdated: lastUpdated,
+    error: error,
     
     // Funções de manipulação
     addVaga,
@@ -239,7 +205,7 @@ export function DataProvider({ children }) {
     
     // Controle de cache
     invalidateCache,
-    refreshData: loadAllData
+    refreshData: refresh
   }
 
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>

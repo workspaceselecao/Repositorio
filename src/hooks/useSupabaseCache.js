@@ -26,7 +26,10 @@ export function useVagasCache(options = {}) {
     return data || []
   }, [user]) // Adicionar user às dependências
 
-  return useCache(CACHE_KEYS.VAGAS, fetcher, {
+  // Usar uma chave única que inclui o user para evitar conflitos
+  const cacheKey = `${CACHE_KEYS.VAGAS}-${user?.id || 'anonymous'}`
+
+  return useCache(cacheKey, fetcher, {
     ttl: 2 * 60 * 1000, // 2 minutes
     ...options
   })
@@ -55,7 +58,10 @@ export function useClientesCache(options = {}) {
       .sort((a, b) => a.nome.localeCompare(b.nome))
   }, [user]) // Adicionar user às dependências
 
-  return useCache(CACHE_KEYS.CLIENTES, fetcher, {
+  // Usar uma chave única que inclui o user para evitar conflitos
+  const cacheKey = `${CACHE_KEYS.CLIENTES}-${user?.id || 'anonymous'}`
+
+  return useCache(cacheKey, fetcher, {
     ttl: 5 * 60 * 1000, // 5 minutes
     ...options
   })
@@ -77,7 +83,10 @@ export function useSitesCache(options = {}) {
     return sites
   }, [user]) // Adicionar user às dependências
 
-  return useCache(CACHE_KEYS.SITES, fetcher, {
+  // Usar uma chave única que inclui o user para evitar conflitos
+  const cacheKey = `${CACHE_KEYS.SITES}-${user?.id || 'anonymous'}`
+
+  return useCache(cacheKey, fetcher, {
     ttl: 5 * 60 * 1000, // 5 minutes
     ...options
   })
@@ -96,7 +105,10 @@ export function useUsersCache(options = {}) {
     return data || []
   }, [user]) // Adicionar user às dependências
 
-  return useCache(CACHE_KEYS.USERS, fetcher, {
+  // Usar uma chave única que inclui o user para evitar conflitos
+  const cacheKey = `${CACHE_KEYS.USERS}-${user?.id || 'anonymous'}`
+
+  return useCache(cacheKey, fetcher, {
     ttl: 10 * 60 * 1000, // 10 minutes
     ...options
   })
