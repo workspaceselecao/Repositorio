@@ -48,17 +48,33 @@ export async function POST(request) {
     }
 
     // Verificar se o email já existe
-    const { data: existingUser, error: checkError } = await supabaseAdmin
+    const { data: existingUsers, error: checkError } = await supabaseAdmin
       .from('users')
       .select('email')
       .eq('email', email)
-      .single()
 
-    if (existingUser) {
+    // Log para debug
+    console.log('Verificando email:', email)
+    console.log('Usuários encontrados:', existingUsers)
+    console.log('Erro na verificação:', checkError)
+
+    // Se encontrou algum usuário com este email
+    if (existingUsers && existingUsers.length > 0) {
+      console.log('Email já existe no sistema:', email)
       return Response.json({ 
         error: 'Este email já está cadastrado no sistema' 
       }, { status: 409 })
     }
+
+    // Se houve erro na verificação (não é erro de "não encontrado")
+    if (checkError && !checkError.message.includes('No rows returned')) {
+      console.error('Erro ao verificar email existente:', checkError)
+      return Response.json({ 
+        error: 'Erro ao verificar email existente' 
+      }, { status: 500 })
+    }
+
+    console.log('Email disponível para criação:', email)
 
     // Criar usuário no Supabase Auth usando admin
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
