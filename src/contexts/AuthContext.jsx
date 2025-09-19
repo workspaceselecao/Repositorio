@@ -130,35 +130,6 @@ export function AuthProvider({ children }) {
     }
   }
 
-  const createUser = async (email, password, name, role = 'RH') => {
-    try {
-      // Usar API route para criar usuário sem interferir na sessão atual
-      const response = await fetch('/api/admin/create-user', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
-        },
-        body: JSON.stringify({
-          email,
-          password,
-          name,
-          role
-        })
-      })
-
-      const result = await response.json()
-
-      if (!response.ok) {
-        return { data: null, error: result.error || 'Erro ao criar usuário' }
-      }
-
-      return { data: result, error: null }
-    } catch (error) {
-      console.error('Erro no createUser:', error)
-      return { data: null, error: error.message || 'Erro ao criar usuário' }
-    }
-  }
 
   const updateUserProfile = async (userId, updates) => {
     try {
@@ -195,7 +166,6 @@ export function AuthProvider({ children }) {
     isRedirecting,
     signIn,
     signUp,
-    createUser,
     signOut,
     updateUserProfile,
   }
