@@ -5,6 +5,7 @@ import { ErrorBoundary  } from '../components/ErrorBoundary'
 import { EnvironmentCheck  } from '../components/EnvironmentCheck'
 import NavigationDebug from '../components/NavigationDebug'
 import { ThemeProvider } from '../components/ui/theme-provider'
+import { Toaster } from '../components/ui/toaster'
 
 export const metadata = {
   title: 'Repositório de Vagas',
@@ -44,6 +45,7 @@ export default function RootLayout({
                     <DataProvider>
                       {children}
                       <NavigationDebug />
+                      <Toaster />
                     </DataProvider>
                   </AuthProvider>
             </EnvironmentCheck>
