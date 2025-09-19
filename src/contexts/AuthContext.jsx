@@ -130,6 +130,65 @@ export function AuthProvider({ children }) {
     }
   }
 
+  const createUser = async (email, password, name, role = 'RH') => {
+    try {
+      // Salvar o usuário atual
+      const currentUser = user
+      
+      // Criar usuário no Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email,
+        password,
+      })
+
+      if (authError) {
+        return { data: null, error: authError }
+      }
+
+      if (authData?.user) {
+        // Criar perfil do usuário na tabela users
+        const { data: profileData, error: profileError } = await supabase
+          .from('users')
+          .insert([
+            {
+              id: authData.user.id,
+              email,
+              name,
+              role
+            }
+          ])
+
+        if (profileError) {
+          console.error('Erro ao criar perfil do usuário:', profileError)
+          return { data: null, error: profileError }
+        }
+
+        // Fazer logout imediatamente para não manter o login do usuário criado
+        await supabase.auth.signOut()
+        
+        // Restaurar o usuário atual se existir
+        if (currentUser) {
+          // Recarregar a página para restaurar a sessão
+          window.location.reload()
+        }
+
+        return { 
+          data: { 
+            success: true, 
+            message: `Usuário ${name} criado com sucesso!`,
+            user: { id: authData.user.id, email, name, role }
+          }, 
+          error: null 
+        }
+      }
+
+      return { data: null, error: 'Erro ao criar usuário' }
+    } catch (error) {
+      console.error('Erro no createUser:', error)
+      return { data: null, error: error.message || 'Erro ao criar usuário' }
+    }
+  }
+
   const updateUserProfile = async (userId, updates) => {
     try {
       const { data, error } = await supabase
@@ -165,6 +224,7 @@ export function AuthProvider({ children }) {
     isRedirecting,
     signIn,
     signUp,
+    createUser,
     signOut,
     updateUserProfile,
   }

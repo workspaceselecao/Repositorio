@@ -124,7 +124,7 @@ export default function Sidebar({ children }) {
             <div className="mb-4">
               <div className="text-sm text-gray-500">Usuário:</div>
               <div className="text-sm font-medium text-gray-900 truncate">
-                {profile?.email || 'Carregando...'}
+                {profile?.name || profile?.email || 'Carregando...'}
               </div>
               <div className="flex items-center mt-1">
                 <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
