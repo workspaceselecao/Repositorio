@@ -260,52 +260,6 @@ export function DataProvider({ children }) {
     }
   }, [cacheVersion, loadAllData])
 
-  // Configurar subscriptions iniciais quando o usuário estiver logado e com foco
-  useEffect(() => {
-    if (user && isFocused && isVisible) {
-      const cleanup = setupRealtimeSubscriptions()
-      return cleanup
-    }
-  }, [user, isFocused, isVisible, setupRealtimeSubscriptions])
-
-  // Tratamento para mudanças de foco usando FocusManager
-  useEffect(() => {
-    if (!user) return
-
-    // Quando a aplicação volta ao foco após estar "dormindo"
-    if (isFocused && isVisible && isAppSleeping()) {
-      console.log('🌅 App woke up from sleep, checking for updates...')
-      wakeUp()
-      
-      const lastUpdate = data.lastUpdated
-      if (lastUpdate) {
-        const timeSinceUpdate = Date.now() - new Date(lastUpdate).getTime()
-        // Se passou mais de 2 minutos, atualizar dados
-        if (timeSinceUpdate > 2 * 60 * 1000) {
-          loadAllData(true)
-        }
-      }
-    }
-  }, [isFocused, isVisible, user, data.lastUpdated, loadAllData, isAppSleeping, wakeUp])
-
-  // Pausar subscriptions quando a aplicação perde foco
-  useEffect(() => {
-    if (!user) return
-
-    if (!isFocused || !isVisible) {
-      console.log('⏸️ Pausing real-time subscriptions due to focus loss')
-      // Pausar subscriptions
-      subscriptionsRef.current.forEach(sub => {
-        sub.unsubscribe()
-      })
-      subscriptionsRef.current = []
-    } else {
-      console.log('▶️ Resuming real-time subscriptions due to focus gain')
-      // Reconfigurar subscriptions
-      setupRealtimeSubscriptions()
-    }
-  }, [isFocused, isVisible, user])
-
   // Função para configurar subscriptions em tempo real
   const setupRealtimeSubscriptions = useCallback(() => {
     if (!user) return
@@ -365,6 +319,52 @@ export function DataProvider({ children }) {
       subscriptionsRef.current = []
     }
   }, [user, loadAllData])
+
+  // Configurar subscriptions iniciais quando o usuário estiver logado e com foco
+  useEffect(() => {
+    if (user && isFocused && isVisible) {
+      const cleanup = setupRealtimeSubscriptions()
+      return cleanup
+    }
+  }, [user, isFocused, isVisible, setupRealtimeSubscriptions])
+
+  // Tratamento para mudanças de foco usando FocusManager
+  useEffect(() => {
+    if (!user) return
+
+    // Quando a aplicação volta ao foco após estar "dormindo"
+    if (isFocused && isVisible && isAppSleeping()) {
+      console.log('🌅 App woke up from sleep, checking for updates...')
+      wakeUp()
+      
+      const lastUpdate = data.lastUpdated
+      if (lastUpdate) {
+        const timeSinceUpdate = Date.now() - new Date(lastUpdate).getTime()
+        // Se passou mais de 2 minutos, atualizar dados
+        if (timeSinceUpdate > 2 * 60 * 1000) {
+          loadAllData(true)
+        }
+      }
+    }
+  }, [isFocused, isVisible, user, data.lastUpdated, loadAllData, isAppSleeping, wakeUp])
+
+  // Pausar subscriptions quando a aplicação perde foco
+  useEffect(() => {
+    if (!user) return
+
+    if (!isFocused || !isVisible) {
+      console.log('⏸️ Pausing real-time subscriptions due to focus loss')
+      // Pausar subscriptions
+      subscriptionsRef.current.forEach(sub => {
+        sub.unsubscribe()
+      })
+      subscriptionsRef.current = []
+    } else {
+      console.log('▶️ Resuming real-time subscriptions due to focus gain')
+      // Reconfigurar subscriptions
+      setupRealtimeSubscriptions()
+    }
+  }, [isFocused, isVisible, user, setupRealtimeSubscriptions])
 
   const value = {
     // Dados
