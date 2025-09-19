@@ -71,11 +71,21 @@ export default function Sidebar({ children }) {
       <div className={`${sidebarOpen ? 'w-64' : 'w-16'} transition-all duration-300 bg-white shadow-lg flex flex-col`}>
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-200">
-          {sidebarOpen && (
-            <h1 className="text-xl font-bold text-gray-800 truncate">
-              Repositório de Vagas
-            </h1>
-          )}
+          <div className="flex items-center space-x-3">
+            {/* Logomarca */}
+            <div className="flex-shrink-0">
+              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+            </div>
+            {sidebarOpen && (
+              <h1 className="text-xl font-bold text-gray-800 truncate">
+                REPOSITÓRIO
+              </h1>
+            )}
+          </div>
           <button
             onClick={toggleSidebar}
             className="p-2 rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100"
@@ -164,9 +174,16 @@ export default function Sidebar({ children }) {
             >
               <Bars3Icon className="h-6 w-6" />
             </button>
-            <h1 className="text-lg font-semibold text-gray-900">
-              Repositório de Vagas
-            </h1>
+            <div className="flex items-center space-x-2">
+              <div className="w-6 h-6 bg-blue-600 rounded flex items-center justify-center">
+                <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <h1 className="text-lg font-semibold text-gray-900">
+                REPOSITÓRIO
+              </h1>
+            </div>
             <div className="w-10"></div> {/* Spacer */}
           </div>
         </div>
