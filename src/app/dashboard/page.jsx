@@ -13,7 +13,6 @@ import {
   Briefcase, 
   BarChart3, 
   TrendingUp, 
-  Plus,
   ArrowRight,
   Building2,
   Calendar,
@@ -95,14 +94,6 @@ export default function DashboardPage() {
   ]
 
   const quickActions = [
-    {
-      title: "Nova Vaga",
-      description: "Cadastrar nova vaga de emprego",
-      icon: Plus,
-      href: "/vagas/nova",
-      color: "text-blue-600",
-      bgColor: "bg-blue-50 dark:bg-blue-950/20 hover:bg-blue-100 dark:hover:bg-blue-900/30"
-    },
     {
       title: "Ver Clientes",
       description: "Gerenciar lista de clientes",
