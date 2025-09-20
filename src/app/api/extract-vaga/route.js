@@ -14,7 +14,7 @@ const supabaseAdmin = createClient(
   }
 )
 
-class JobScraper {
+class UniversalJobScraper {
   constructor() {
     this.axiosConfig = {
       timeout: 15000,
@@ -36,31 +36,203 @@ class JobScraper {
       .replace(/\s+/g, ' ') // Múltiplos espaços em um
       .replace(/\n+/g, '\n') // Múltiplas quebras de linha em uma
       .replace(/\t+/g, ' ') // Tabs em espaços
+      .replace(/[^\x20-\x7E\u00C0-\u017F]/g, '') // Remove caracteres não-ASCII problemáticos
       .trim()
   }
 
-  // Função para extrair seções específicas do HTML
-  extractSection($, selector, fallbackPatterns = []) {
-    // Tentar primeiro com seletor CSS
-    let content = $(selector).text()
-    if (content && content.trim()) {
-      return this.cleanText(content)
+  // Função para extrair seções usando múltiplas estratégias
+  extractSection($, selectors = [], regexPatterns = [], fallbackText = '') {
+    // Estratégia 1: Seletores CSS
+    for (const selector of selectors) {
+      const elements = $(selector)
+      if (elements.length > 0) {
+        const text = elements.map((i, el) => $(el).text()).get().join(' ')
+        if (text && text.trim()) {
+          return this.cleanText(text)
+        }
+      }
     }
 
-    // Tentar com padrões de regex
+    // Estratégia 2: Busca por texto próximo a palavras-chave
+    const keywords = ['descrição', 'responsabilidades', 'requisitos', 'benefícios', 'salário', 'horário', 'local', 'etapas']
+    for (const keyword of keywords) {
+      const elements = $(`*:contains("${keyword}")`).not('script, style')
+      if (elements.length > 0) {
+        const text = elements.map((i, el) => $(el).text()).get().join(' ')
+        if (text && text.trim()) {
+          return this.cleanText(text)
+        }
+      }
+    }
+
+    // Estratégia 3: Regex patterns
     const fullText = $('body').text()
-    for (const pattern of fallbackPatterns) {
+    for (const pattern of regexPatterns) {
       const regex = new RegExp(pattern, 'is')
       const match = fullText.match(regex)
       if (match && match[1]) {
         return this.cleanText(match[1])
       }
     }
-    return ''
+
+    return fallbackText
   }
 
-  // Extrair informações específicas do Gupy
-  extractGupyInfo($) {
+  // Extrair informações de JSON-LD
+  extractFromJsonLd($) {
+    const jobData = {}
+    
+    $('script[type="application/ld+json"]').each((i, element) => {
+      try {
+        const jsonData = JSON.parse($(element).html())
+        if (jsonData['@type'] === 'JobPosting') {
+          jobData.titulo = jsonData.title || jobData.titulo
+          jobData.descricao = jsonData.description || jobData.descricao
+          
+          if (jsonData.jobLocation) {
+            const location = jsonData.jobLocation
+            if (location.address) {
+              jobData.local_trabalho = `${location.address.addressLocality || ''}, ${location.address.addressRegion || ''}`.replace(/^,\s*|,\s*$/g, '')
+            }
+          }
+          
+          if (jsonData.baseSalary) {
+            const salary = jsonData.baseSalary
+            const currency = salary.currency || 'R$'
+            const minValue = salary.value?.minValue || ''
+            const maxValue = salary.value?.maxValue || ''
+            if (minValue || maxValue) {
+              jobData.salario = `${currency} ${minValue} - ${maxValue}`.trim()
+            }
+          }
+        }
+      } catch (e) {
+        // Ignore JSON parsing errors
+      }
+    })
+    
+    return jobData
+  }
+
+  // Detectar site e aplicar estratégias específicas
+  detectSite(url) {
+    try {
+      const urlObj = new URL(url)
+      const hostname = urlObj.hostname.toLowerCase()
+      
+      console.log(`🔍 Detectando site para: ${hostname}`)
+      
+      if (hostname.includes('gupy.io')) {
+        console.log('✅ Site detectado: Gupy')
+        return 'gupy'
+      }
+      if (hostname.includes('linkedin.com')) {
+        console.log('✅ Site detectado: LinkedIn')
+        return 'linkedin'
+      }
+      if (hostname.includes('indeed.com')) {
+        console.log('✅ Site detectado: Indeed')
+        return 'indeed'
+      }
+      if (hostname.includes('vagas.com')) {
+        console.log('✅ Site detectado: Vagas.com')
+        return 'vagas'
+      }
+      if (hostname.includes('infojobs.com.br')) {
+        console.log('✅ Site detectado: InfoJobs')
+        return 'infojobs'
+      }
+      
+      console.log('⚠️ Site genérico detectado')
+      return 'generic'
+    } catch (e) {
+      console.log('❌ Erro ao detectar site:', e.message)
+      return 'generic'
+    }
+  }
+
+  // Estratégias específicas por site
+  getSiteStrategies(site) {
+    const strategies = {
+      gupy: {
+        title: [
+          'h1[data-testid="job-title"]',
+          'h1.job-title',
+          'h1',
+          '[data-testid="job-title"]',
+          '.job-title'
+        ],
+        description: [
+          '[data-testid="job-description"]',
+          '.job-description',
+          '.description'
+        ],
+        salary: [
+          '[data-testid="salary"]',
+          '.salary',
+          '.salario'
+        ]
+      },
+      linkedin: {
+        title: [
+          'h1.job-details-jobs-unified-top-card__job-title',
+          'h1',
+          '.job-details-jobs-unified-top-card__job-title'
+        ],
+        description: [
+          '.jobs-description-content__text',
+          '.jobs-box__html-content'
+        ],
+        salary: [
+          '.jobs-unified-top-card__job-insight',
+          '.salary'
+        ]
+      },
+      indeed: {
+        title: [
+          'h1[data-testid="job-title"]',
+          'h1.jobsearch-JobInfoHeader-title',
+          'h1'
+        ],
+        description: [
+          '[data-testid="job-description"]',
+          '.jobsearch-jobDescriptionText'
+        ],
+        salary: [
+          '[data-testid="job-salary"]',
+          '.salary'
+        ]
+      },
+      generic: {
+        title: [
+          'h1',
+          '.job-title',
+          '.title',
+          '[data-testid*="title"]',
+          '[class*="title"]'
+        ],
+        description: [
+          '.job-description',
+          '.description',
+          '.content',
+          '[data-testid*="description"]',
+          '[class*="description"]'
+        ],
+        salary: [
+          '.salary',
+          '.salario',
+          '[data-testid*="salary"]',
+          '[class*="salary"]'
+        ]
+      }
+    }
+    
+    return strategies[site] || strategies.generic
+  }
+
+  // Extrair informações universais
+  extractUniversalInfo($, site) {
+    const strategies = this.getSiteStrategies(site)
     const jobData = {
       url: '',
       titulo: '',
@@ -76,132 +248,90 @@ class JobScraper {
       data_extracao: new Date().toISOString()
     }
 
-    // Extrair título - tentar múltiplos seletores
-    const titleSelectors = [
-      'h1[data-testid="job-title"]',
-      'h1.job-title',
-      'h1',
-      '[data-testid="job-title"]',
-      '.job-title'
-    ]
-    
-    for (const selector of titleSelectors) {
-      const title = $(selector).first().text().trim()
-      if (title) {
-        jobData.titulo = this.cleanText(title)
-        break
-      }
-    }
+    // Extrair título
+    jobData.titulo = this.extractSection($, strategies.title, [
+      /<h1[^>]*>([^<]+)<\/h1>/i,
+      /<title[^>]*>([^<]+)<\/title>/i
+    ], 'Título não encontrado')
 
-    // Extrair descrição da vaga
-    jobData.descricao = this.extractSection($, 
-      '[data-testid="job-description"], .job-description, .description',
-      [
-        'Descrição da vaga[:\\s]*([\\s\\S]*?)(?=Responsabilidades|Requisitos|Benefícios|Etapas|Informações|$)',
-        'Sobre a vaga[:\\s]*([\\s\\S]*?)(?=Responsabilidades|Requisitos|Benefícios|Etapas|Informações|$)'
-      ]
-    )
+    // Extrair descrição
+    jobData.descricao = this.extractSection($, strategies.description, [
+      /descrição[:\s]*([\s\S]*?)(?=responsabilidades|requisitos|benefícios|etapas|informações|$)/i,
+      /sobre a vaga[:\s]*([\s\S]*?)(?=responsabilidades|requisitos|benefícios|etapas|informações|$)/i
+    ], '')
 
     // Extrair responsabilidades
-    jobData.responsabilidades = this.extractSection($,
-      '[data-testid="job-responsibilities"], .responsibilities, .responsabilidades',
-      [
-        'Responsabilidades e atribuições[:\\s]*([\\s\\S]*?)(?=Requisitos|Qualificações|Benefícios|Etapas|Informações|$)',
-        'Responsabilidades[:\\s]*([\\s\\S]*?)(?=Requisitos|Qualificações|Benefícios|Etapas|Informações|$)',
-        'Atribuições[:\\s]*([\\s\\S]*?)(?=Requisitos|Qualificações|Benefícios|Etapas|Informações|$)'
-      ]
-    )
+    jobData.responsabilidades = this.extractSection($, [
+      '[data-testid*="responsibilities"]',
+      '.responsibilities',
+      '.responsabilidades',
+      '[class*="responsibilities"]'
+    ], [
+      /responsabilidades[:\s]*([\s\S]*?)(?=requisitos|qualificações|benefícios|etapas|informações|$)/i,
+      /atribuições[:\s]*([\s\S]*?)(?=requisitos|qualificações|benefícios|etapas|informações|$)/i
+    ], '')
 
     // Extrair requisitos
-    jobData.requisitos = this.extractSection($,
-      '[data-testid="job-requirements"], .requirements, .requisitos',
-      [
-        'Requisitos e qualificações[:\\s]*([\\s\\S]*?)(?=Benefícios|Informações|Etapas|Local|Horário|$)',
-        'Requisitos[:\\s]*([\\s\\S]*?)(?=Benefícios|Informações|Etapas|Local|Horário|$)',
-        'Qualificações[:\\s]*([\\s\\S]*?)(?=Benefícios|Informações|Etapas|Local|Horário|$)'
-      ]
-    )
+    jobData.requisitos = this.extractSection($, [
+      '[data-testid*="requirements"]',
+      '.requirements',
+      '.requisitos',
+      '[class*="requirements"]'
+    ], [
+      /requisitos[:\s]*([\s\S]*?)(?=benefícios|informações|etapas|local|horário|$)/i,
+      /qualificações[:\s]*([\s\S]*?)(?=benefícios|informações|etapas|local|horário|$)/i
+    ], '')
 
-    // Extrair salário - procurar em múltiplos lugares
-    const salarySelectors = [
-      '[data-testid="salary"], .salary, .salario',
-      'text:contains("Salário")',
-      'text:contains("Remuneração")'
-    ]
-    
-    for (const selector of salarySelectors) {
-      const salaryText = $(selector).text()
-      if (salaryText && (salaryText.includes('R$') || salaryText.includes('salário'))) {
-        const salaryMatch = salaryText.match(/R\$\s*[\d.,]+/g)
-        if (salaryMatch) {
-          jobData.salario = salaryMatch[0]
-          break
-        }
-      }
-    }
+    // Extrair salário
+    jobData.salario = this.extractSection($, strategies.salary, [
+      /salário[:\s]*([^\\n]*)/i,
+      /remuneração[:\s]*([^\\n]*)/i,
+      /R\$\s*[\d.,]+/g
+    ], '')
 
-    // Se não encontrou salário, tentar com regex no texto completo
-    if (!jobData.salario) {
-      const fullText = $('body').text()
-      const salaryPatterns = [
-        /Salário[:\\s]*R\$\s*[\d.,]+/gi,
-        /Remuneração[:\\s]*R\$\s*[\d.,]+/gi,
-        /R\$\s*[\d.,]+/g
-      ]
-      
-      for (const pattern of salaryPatterns) {
-        const match = fullText.match(pattern)
-        if (match) {
-          jobData.salario = match[0].trim()
-          break
-        }
-      }
-    }
-
-    // Extrair horário de trabalho
-    jobData.horario_trabalho = this.extractSection($,
-      '[data-testid="work-schedule"], .work-schedule, .horario',
-      [
-        'Horário de Trabalho[:\\s]*([^\\n]*?)(?=Jornada|Benefícios|Local|Etapas|$)',
-        'Horário[:\\s]*([^\\n]*?)(?=Jornada|Benefícios|Local|Etapas|$)'
-      ]
-    )
-
-    // Extrair jornada de trabalho
-    jobData.jornada_trabalho = this.extractSection($,
-      '[data-testid="work-hours"], .work-hours, .jornada',
-      [
-        'Jornada de Trabalho[:\\s]*([^\\n]*?)(?=Benefícios|Local|Etapas|$)',
-        'Jornada[:\\s]*([^\\n]*?)(?=Benefícios|Local|Etapas|$)'
-      ]
-    )
+    // Extrair horário
+    jobData.horario_trabalho = this.extractSection($, [
+      '[data-testid*="schedule"]',
+      '.schedule',
+      '.horario',
+      '[class*="schedule"]'
+    ], [
+      /horário[:\s]*([^\\n]*)/i,
+      /jornada[:\s]*([^\\n]*)/i
+    ], '')
 
     // Extrair benefícios
-    jobData.beneficios = this.extractSection($,
-      '[data-testid="benefits"], .benefits, .beneficios',
-      [
-        'Benefícios[:\\s]*([\\s\\S]*?)(?=Local|Etapas|Processo|$)',
-        'O que oferecemos[:\\s]*([\\s\\S]*?)(?=Local|Etapas|Processo|$)'
-      ]
-    )
+    jobData.beneficios = this.extractSection($, [
+      '[data-testid*="benefits"]',
+      '.benefits',
+      '.beneficios',
+      '[class*="benefits"]'
+    ], [
+      /benefícios[:\s]*([\s\S]*?)(?=local|etapas|processo|$)/i,
+      /o que oferecemos[:\s]*([\s\S]*?)(?=local|etapas|processo|$)/i
+    ], '')
 
-    // Extrair local de trabalho
-    jobData.local_trabalho = this.extractSection($,
-      '[data-testid="work-location"], .work-location, .local',
-      [
-        'Local de Trabalho[:\\s]*([^\\n]*?)(?=Etapas|Processo|$)',
-        'Local[:\\s]*([^\\n]*?)(?=Etapas|Processo|$)'
-      ]
-    )
+    // Extrair local
+    jobData.local_trabalho = this.extractSection($, [
+      '[data-testid*="location"]',
+      '.location',
+      '.local',
+      '[class*="location"]'
+    ], [
+      /local[:\s]*([^\\n]*)/i,
+      /endereço[:\s]*([^\\n]*)/i
+    ], '')
 
     // Extrair etapas do processo
-    jobData.etapas_processo = this.extractSection($,
-      '[data-testid="process-steps"], .process-steps, .etapas',
-      [
-        'Etapas do processo[:\\s]*([\\s\\S]*?)(?=Muito prazer|Somos|$)',
-        'Processo seletivo[:\\s]*([\\s\\S]*?)(?=Muito prazer|Somos|$)'
-      ]
-    )
+    jobData.etapas_processo = this.extractSection($, [
+      '[data-testid*="process"]',
+      '.process',
+      '.etapas',
+      '[class*="process"]'
+    ], [
+      /etapas[:\s]*([\s\S]*?)(?=muito prazer|somos|$)/i,
+      /processo[:\s]*([\s\S]*?)(?=muito prazer|somos|$)/i
+    ], '')
 
     return jobData
   }
@@ -213,15 +343,21 @@ class JobScraper {
       const response = await axios.get(url, this.axiosConfig)
       const $ = cheerio.load(response.data)
       
-      // Extrair informações específicas do Gupy
-      const jobData = this.extractGupyInfo($)
-
-      // Definir URL
-      jobData.url = url
-
-      // Se não conseguiu extrair título, tentar do title da página
-      if (!jobData.titulo) {
-        jobData.titulo = $('title').text().trim() || 'Título não encontrado'
+      // Detectar site
+      const site = this.detectSite(url)
+      console.log(`📍 Site detectado: ${site}`)
+      
+      // Extrair dados do JSON-LD primeiro
+      const jsonLdData = this.extractFromJsonLd($)
+      
+      // Extrair dados universais
+      const universalData = this.extractUniversalInfo($, site)
+      
+      // Combinar dados (JSON-LD tem prioridade)
+      const jobData = {
+        ...universalData,
+        ...jsonLdData,
+        url: url
       }
 
       // Limpar e normalizar todos os campos
@@ -243,7 +379,7 @@ class JobScraper {
 
 export async function POST(request) {
   try {
-    console.log('=== EXTRAÇÃO DE VAGA ===')
+    console.log('=== EXTRAÇÃO UNIVERSAL DE VAGA ===')
     
     // Verificar se o cliente Supabase está configurado
     if (!supabaseAdmin) {
@@ -261,13 +397,8 @@ export async function POST(request) {
       }, { status: 400 })
     }
     
-    if (!url.includes('gupy.io')) {
-      return Response.json({ 
-        error: 'URL deve ser do Gupy' 
-      }, { status: 400 })
-    }
-    
-    const scraper = new JobScraper()
+    // Aceitar qualquer URL de vaga (não apenas Gupy)
+    const scraper = new UniversalJobScraper()
     const jobData = await scraper.extractJobInfo(url)
     
     return Response.json({

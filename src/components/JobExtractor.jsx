@@ -39,8 +39,11 @@ const JobExtractor = ({ onVagaCriada }) => {
       return
     }
 
-    if (!url.includes('gupy.io')) {
-      showNotification('A URL deve ser do Gupy', 'error')
+    // Validar se é uma URL válida
+    try {
+      new URL(url)
+    } catch (e) {
+      showNotification('Por favor, insira uma URL válida', 'error')
       return
     }
 
@@ -77,15 +80,44 @@ const JobExtractor = ({ onVagaCriada }) => {
     try {
       const dataToSave = editing ? editedData : jobData
       
-      // Função para extrair cliente da URL
+      // Função para extrair cliente da URL (universal)
       const extractClienteFromUrl = (url) => {
         try {
           const urlObj = new URL(url)
           const hostname = urlObj.hostname
-          const match = hostname.match(/([^.]+)\.gupy\.io/)
-          if (match) {
-            return match[1].charAt(0).toUpperCase() + match[1].slice(1)
+          
+          // Gupy
+          const gupyMatch = hostname.match(/([^.]+)\.gupy\.io/)
+          if (gupyMatch) {
+            return gupyMatch[1].charAt(0).toUpperCase() + gupyMatch[1].slice(1)
           }
+          
+          // LinkedIn
+          if (hostname.includes('linkedin.com')) {
+            return 'LinkedIn'
+          }
+          
+          // Indeed
+          if (hostname.includes('indeed.com')) {
+            return 'Indeed'
+          }
+          
+          // Vagas.com
+          if (hostname.includes('vagas.com')) {
+            return 'Vagas.com'
+          }
+          
+          // InfoJobs
+          if (hostname.includes('infojobs.com.br')) {
+            return 'InfoJobs'
+          }
+          
+          // Extrair domínio principal
+          const domainMatch = hostname.match(/([^.]+)\.(com|com\.br|io|net|org)$/)
+          if (domainMatch) {
+            return domainMatch[1].charAt(0).toUpperCase() + domainMatch[1].slice(1)
+          }
+          
         } catch (e) {
           console.error('Erro ao extrair cliente da URL:', e)
         }
@@ -140,9 +172,27 @@ const JobExtractor = ({ onVagaCriada }) => {
         return 'Outro'
       }
 
+      // Função para determinar site baseado na URL
+      const determineSite = (url) => {
+        try {
+          const urlObj = new URL(url)
+          const hostname = urlObj.hostname.toLowerCase()
+          
+          if (hostname.includes('gupy.io')) return 'Gupy'
+          if (hostname.includes('linkedin.com')) return 'LinkedIn'
+          if (hostname.includes('indeed.com')) return 'Indeed'
+          if (hostname.includes('vagas.com')) return 'Vagas.com'
+          if (hostname.includes('infojobs.com.br')) return 'InfoJobs'
+          
+          return 'Outro'
+        } catch (e) {
+          return 'Outro'
+        }
+      }
+
       // Mapear dados extraídos para o formato da tabela vagas
       const vagaData = {
-        site: 'Gupy',
+        site: determineSite(dataToSave.url),
         categoria: determineCategoria(dataToSave.titulo, dataToSave.descricao),
         cargo: dataToSave.titulo || 'Cargo não informado',
         cliente: extractClienteFromUrl(dataToSave.url),
@@ -301,7 +351,7 @@ const JobExtractor = ({ onVagaCriada }) => {
         <div className="flex gap-3">
           <input
             type="url"
-            placeholder="https://empresa.gupy.io/jobs/1234567?jobBoardSource=share_link"
+            placeholder="https://empresa.gupy.io/jobs/1234567 ou https://linkedin.com/jobs/view/1234567"
             value={url}
             onChange={(e) => setUrl(e.target.value)}
             className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
@@ -322,7 +372,7 @@ const JobExtractor = ({ onVagaCriada }) => {
         </div>
         
         <p className="text-sm text-gray-500 mt-2">
-          Cole aqui o link da vaga do Gupy para extrair automaticamente todas as informações
+          Cole aqui o link da vaga (Gupy, LinkedIn, Indeed, Vagas.com, InfoJobs ou outros) para extrair automaticamente todas as informações
         </p>
       </div>
 
