@@ -118,6 +118,16 @@ export default function VagasPage() {
               >
                 <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                   <Button
+                    onClick={() => window.location.href = '/vagas/nova'}
+                    className="bg-gradient-to-r from-primary to-chart-1 hover:from-primary/90 hover:to-chart-1/90"
+                  >
+                    <PlusIcon className="h-4 w-4 mr-2" />
+                    Nova Vaga
+                  </Button>
+                </motion.div>
+                
+                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                  <Button
                     onClick={handleImportToggle}
                     variant={showImport ? "secondary" : "default"}
                     className="bg-gradient-to-r from-chart-2 to-chart-3 hover:from-chart-2/90 hover:to-chart-3/90"
