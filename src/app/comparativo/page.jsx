@@ -7,7 +7,7 @@ import DashboardLayout from '../../components/DashboardLayout'
 import { ProtectedRoute } from '../../components/ProtectedRoute'
 import SeletorClientes from '../../components/SeletorClientes'
 import ComparativoVagas from '../../components/ComparativoVagas'
-import FiltrosComparativo from '../../components/FiltrosComparativo'
+import FiltrosAvancadosComparativo from '../../components/FiltrosAvancadosComparativo'
 import ExportExcel from '../../components/ExportExcel'
 import { useCache } from '../../contexts/CacheContext'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card'
@@ -48,6 +48,7 @@ export default function ComparativoPage() {
     cargo: '',
     produto: ''
   })
+  const [filtrosPorCliente, setFiltrosPorCliente] = useState({})
   const [vagasParaExport, setVagasParaExport] = useState([])
   const [viewMode, setViewMode] = useState('cards') // 'cards' ou 'charts'
 
@@ -304,27 +305,20 @@ export default function ComparativoPage() {
                   </Card>
                 </motion.div>
 
-                {/* Filtros */}
+                {/* Filtros Avançados */}
                 {clientesSelecionados.length > 0 && (
                   <motion.div variants={itemVariants}>
-                    <Card className="border-0 shadow-lg">
-                      <CardHeader>
-                        <CardTitle className="flex items-center space-x-2">
-                          <FunnelIcon className="h-5 w-5 text-chart-2" />
-                          <span>Filtros de Comparação</span>
-                        </CardTitle>
-                        <CardDescription>
-                          Aplique filtros para refinar a comparação
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <FiltrosComparativo 
-                          filtros={filtros}
-                          onFiltrosChange={setFiltros}
-                          vagasDisponiveis={vagasParaFiltro}
-                        />
-                      </CardContent>
-                    </Card>
+                    <FiltrosAvancadosComparativo 
+                      clientesSelecionados={clientesSelecionados}
+                      filtros={filtros}
+                      onFiltrosChange={(novosFiltros, novosFiltrosPorCliente) => {
+                        setFiltros(novosFiltros)
+                        if (novosFiltrosPorCliente) {
+                          setFiltrosPorCliente(novosFiltrosPorCliente)
+                        }
+                      }}
+                      vagasDisponiveis={vagasParaFiltro}
+                    />
                   </motion.div>
                 )}
 
@@ -421,6 +415,7 @@ export default function ComparativoPage() {
                         <ComparativoVagas 
                           clientesSelecionados={clientesSelecionados}
                           filtros={filtros}
+                          filtrosPorCliente={filtrosPorCliente}
                           onVagasChange={setVagasParaExport}
                         />
                       </motion.div>

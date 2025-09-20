@@ -16,23 +16,26 @@ import { ChevronDownIcon,
  } from '@heroicons/react/24/outline'
 import { useCache } from '../contexts/CacheContext'
 
-export default function ComparativoVagas({ clientesSelecionados, filtros, onVagasChange }) {
+export default function ComparativoVagas({ clientesSelecionados, filtros, onVagasChange, filtrosPorCliente = {} }) {
   const [secoesExpandidas, setSecoesExpandidas] = useState(new Set())
 
   // Usar o CacheContext para obter dados
   const { getVagasByCliente, loading: vagasLoading, isLoaded } = useCache()
   const vagas = getVagasByCliente(clientesSelecionados)
 
-  // Filtrar as vagas carregadas pelo cache com base nos filtros adicionais
+  // Filtrar as vagas carregadas pelo cache com base nos filtros por cliente
   const vagasFiltradas = useMemo(() => {
     return vagas.filter(vaga => {
-      const matchSite = filtros.site ? vaga.site === filtros.site : true
-      const matchCategoria = filtros.categoria ? vaga.categoria === filtros.categoria : true
-      const matchCargo = filtros.cargo ? vaga.cargo === filtros.cargo : true
-      const matchProduto = filtros.produto ? vaga.produto === filtros.produto : true
+      const filtrosCliente = filtrosPorCliente[vaga.cliente] || {}
+      
+      const matchSite = filtrosCliente.site ? vaga.site === filtrosCliente.site : true
+      const matchCategoria = filtrosCliente.categoria ? vaga.categoria === filtrosCliente.categoria : true
+      const matchCargo = filtrosCliente.cargo ? vaga.cargo === filtrosCliente.cargo : true
+      const matchProduto = filtrosCliente.produto ? vaga.produto === filtrosCliente.produto : true
+      
       return matchSite && matchCategoria && matchCargo && matchProduto
     })
-  }, [vagas, filtros])
+  }, [vagas, filtrosPorCliente])
 
   // Agrupar vagas filtradas por cliente
   const vagasPorCliente = useMemo(() => {
