@@ -137,17 +137,19 @@ export async function POST(request) {
 
     console.log('✅ Usuário criado no Auth com sucesso:', authData?.user?.id)
 
-    // Criar perfil na tabela users
+    // Criar perfil na tabela users usando upsert para evitar duplicatas
     console.log('Criando perfil na tabela users...')
     const { data: profileData, error: profileError } = await supabaseAdmin
       .from('users')
-      .insert([{
+      .upsert([{
         id: authData.user.id,
         email,
         name,
         role,
         created_at: new Date().toISOString()
-      }])
+      }], {
+        onConflict: 'id'
+      })
 
     if (profileError) {
       console.error('❌ Erro ao criar perfil do usuário:', profileError)

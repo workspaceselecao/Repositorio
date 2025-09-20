@@ -65,6 +65,7 @@ export async function POST(request) {
       }, { status: 409 })
     }
 
+
     console.log('Email disponível, criando usuário...')
 
     // Criar usuário usando admin.createUser
@@ -87,15 +88,17 @@ export async function POST(request) {
 
     console.log('Usuário criado no Auth:', authData.user.id)
 
-    // Criar perfil na tabela users
+    // Criar perfil na tabela users usando upsert para evitar duplicatas
     const { data: profileData, error: profileError } = await supabaseAdmin
       .from('users')
-      .insert({
+      .upsert({
         id: authData.user.id,
         email,
         name,
         role,
         created_at: new Date().toISOString()
+      }, {
+        onConflict: 'id'
       })
 
     if (profileError) {
