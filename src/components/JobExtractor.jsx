@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback, memo } from 'react'
 import { 
   Search, Save, List, Edit3, Check, X, ExternalLink, 
   Calendar, MapPin, DollarSign, Clock, Users, FileText,
@@ -8,6 +8,49 @@ import {
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { useCache } from '../contexts/CacheContext'
+
+// Componente FieldDisplay otimizado para evitar re-renderizações
+const FieldDisplay = memo(({ label, field, icon: Icon, multiline = false, placeholder = "Não informado", value, onChange, editing }) => {
+  return (
+    <div className="mb-4">
+      <div className="flex items-center mb-2">
+        {Icon && <Icon className="h-4 w-4 mr-2 text-blue-600" />}
+        <label className="font-medium text-gray-700">{label}</label>
+      </div>
+      {editing ? (
+        multiline ? (
+          <textarea
+            value={value}
+            onChange={(e) => onChange(field, e.target.value)}
+            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors min-h-24"
+            rows="4"
+            placeholder={placeholder}
+          />
+        ) : (
+          <input
+            type="text"
+            value={value}
+            onChange={(e) => onChange(field, e.target.value)}
+            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+            placeholder={placeholder}
+          />
+        )
+      ) : (
+        <div className={`p-3 bg-gray-50 rounded-lg border ${multiline ? 'min-h-24' : ''}`}>
+          {multiline ? (
+            <pre className="whitespace-pre-wrap text-sm text-gray-700 font-sans">
+              {value || placeholder}
+            </pre>
+          ) : (
+            <span className="text-gray-700">{value || placeholder}</span>
+          )}
+        </div>
+      )}
+    </div>
+  )
+})
+
+FieldDisplay.displayName = 'FieldDisplay'
 
 const JobExtractor = ({ onVagaCriada }) => {
   const [url, setUrl] = useState('')
@@ -260,64 +303,22 @@ const JobExtractor = ({ onVagaCriada }) => {
     setEditing(false)
   }
 
-  const handleFieldChange = (field, value) => {
+  const handleFieldChange = useCallback((field, value) => {
     setEditedData(prev => ({
       ...prev,
       [field]: value
     }))
-  }
+  }, [])
 
-  const formatDate = (dateString) => {
+  const formatDate = useCallback((dateString) => {
     if (!dateString) return 'N/A'
     try {
       return new Date(dateString).toLocaleString('pt-BR')
     } catch {
       return dateString
     }
-  }
+  }, [])
 
-  const FieldDisplay = ({ label, field, icon: Icon, multiline = false, placeholder = "Não informado" }) => {
-    const currentData = editing ? editedData : jobData
-    const value = currentData?.[field] || ''
-
-    return (
-      <div className="mb-4">
-        <div className="flex items-center mb-2">
-          {Icon && <Icon className="h-4 w-4 mr-2 text-blue-600" />}
-          <label className="font-medium text-gray-700">{label}</label>
-        </div>
-        {editing ? (
-          multiline ? (
-            <textarea
-              value={value}
-              onChange={(e) => handleFieldChange(field, e.target.value)}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors min-h-24"
-              rows="4"
-              placeholder={placeholder}
-            />
-          ) : (
-            <input
-              type="text"
-              value={value}
-              onChange={(e) => handleFieldChange(field, e.target.value)}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-              placeholder={placeholder}
-            />
-          )
-        ) : (
-          <div className={`p-3 bg-gray-50 rounded-lg border ${multiline ? 'min-h-24' : ''}`}>
-            {multiline ? (
-              <pre className="whitespace-pre-wrap text-sm text-gray-700 font-sans">
-                {value || placeholder}
-              </pre>
-            ) : (
-              <span className="text-gray-700">{value || placeholder}</span>
-            )}
-          </div>
-        )}
-      </div>
-    )
-  }
 
   const Notification = ({ message, type, onClose }) => (
     <div className={`fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 flex items-center max-w-md ${
@@ -427,25 +428,25 @@ const JobExtractor = ({ onVagaCriada }) => {
           <div className="grid lg:grid-cols-2 gap-8">
             {/* Coluna da Esquerda - Informações Básicas */}
             <div className="space-y-4">
-              <FieldDisplay label="Site" field="site" icon={Building2} placeholder="Gupy" />
-              <FieldDisplay label="Categoria" field="categoria" icon={Tag} placeholder="Categoria não identificada" />
-              <FieldDisplay label="Cargo" field="cargo" icon={Briefcase} placeholder="Cargo não informado" />
-              <FieldDisplay label="Cliente" field="cliente" icon={Building2} placeholder="Cliente não identificado" />
-              <FieldDisplay label="Produto" field="produto" icon={Package} placeholder="Produto não identificado" />
-              <FieldDisplay label="Título da Vaga" field="titulo" icon={FileText} placeholder="Título não informado" />
-              <FieldDisplay label="Local de Trabalho" field="local_trabalho" icon={MapPin} placeholder="Local não informado" />
-              <FieldDisplay label="Salário" field="salario" icon={DollarSign} placeholder="A combinar" />
-              <FieldDisplay label="Horário de Trabalho" field="horario_trabalho" icon={Clock} placeholder="Horário não informado" />
-              <FieldDisplay label="Jornada de Trabalho" field="jornada_trabalho" icon={Users} placeholder="Jornada não informada" />
+              <FieldDisplay label="Site" field="site" icon={Building2} placeholder="Gupy" value={editing ? editedData.site : jobData.site} onChange={handleFieldChange} editing={editing} />
+              <FieldDisplay label="Categoria" field="categoria" icon={Tag} placeholder="Categoria não identificada" value={editing ? editedData.categoria : jobData.categoria} onChange={handleFieldChange} editing={editing} />
+              <FieldDisplay label="Cargo" field="cargo" icon={Briefcase} placeholder="Cargo não informado" value={editing ? editedData.cargo : jobData.cargo} onChange={handleFieldChange} editing={editing} />
+              <FieldDisplay label="Cliente" field="cliente" icon={Building2} placeholder="Cliente não identificado" value={editing ? editedData.cliente : jobData.cliente} onChange={handleFieldChange} editing={editing} />
+              <FieldDisplay label="Produto" field="produto" icon={Package} placeholder="Produto não identificado" value={editing ? editedData.produto : jobData.produto} onChange={handleFieldChange} editing={editing} />
+              <FieldDisplay label="Título da Vaga" field="titulo" icon={FileText} placeholder="Título não informado" value={editing ? editedData.titulo : jobData.titulo} onChange={handleFieldChange} editing={editing} />
+              <FieldDisplay label="Local de Trabalho" field="local_trabalho" icon={MapPin} placeholder="Local não informado" value={editing ? editedData.local_trabalho : jobData.local_trabalho} onChange={handleFieldChange} editing={editing} />
+              <FieldDisplay label="Salário" field="salario" icon={DollarSign} placeholder="A combinar" value={editing ? editedData.salario : jobData.salario} onChange={handleFieldChange} editing={editing} />
+              <FieldDisplay label="Horário de Trabalho" field="horario_trabalho" icon={Clock} placeholder="Horário não informado" value={editing ? editedData.horario_trabalho : jobData.horario_trabalho} onChange={handleFieldChange} editing={editing} />
+              <FieldDisplay label="Jornada de Trabalho" field="jornada_trabalho" icon={Users} placeholder="Jornada não informada" value={editing ? editedData.jornada_trabalho : jobData.jornada_trabalho} onChange={handleFieldChange} editing={editing} />
             </div>
             
             {/* Coluna da Direita - Descrições Detalhadas */}
             <div className="space-y-4">
-              <FieldDisplay label="Descrição da Vaga" field="descricao" multiline placeholder="Descrição não disponível" />
-              <FieldDisplay label="Responsabilidades e Atribuições" field="responsabilidades" multiline placeholder="Responsabilidades não informadas" />
-              <FieldDisplay label="Requisitos e Qualificações" field="requisitos" multiline placeholder="Requisitos não informados" />
-              <FieldDisplay label="Benefícios" field="beneficios" multiline placeholder="Benefícios não informados" />
-              <FieldDisplay label="Etapas do Processo" field="etapas_processo" multiline placeholder="Etapas não informadas" />
+              <FieldDisplay label="Descrição da Vaga" field="descricao" multiline placeholder="Descrição não disponível" value={editing ? editedData.descricao : jobData.descricao} onChange={handleFieldChange} editing={editing} />
+              <FieldDisplay label="Responsabilidades e Atribuições" field="responsabilidades" multiline placeholder="Responsabilidades não informadas" value={editing ? editedData.responsabilidades : jobData.responsabilidades} onChange={handleFieldChange} editing={editing} />
+              <FieldDisplay label="Requisitos e Qualificações" field="requisitos" multiline placeholder="Requisitos não informados" value={editing ? editedData.requisitos : jobData.requisitos} onChange={handleFieldChange} editing={editing} />
+              <FieldDisplay label="Benefícios" field="beneficios" multiline placeholder="Benefícios não informados" value={editing ? editedData.beneficios : jobData.beneficios} onChange={handleFieldChange} editing={editing} />
+              <FieldDisplay label="Etapas do Processo" field="etapas_processo" multiline placeholder="Etapas não informadas" value={editing ? editedData.etapas_processo : jobData.etapas_processo} onChange={handleFieldChange} editing={editing} />
             </div>
           </div>
 

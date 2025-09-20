@@ -44,14 +44,14 @@ const FormularioVaga = ({ onVagaCriada }) => {
     setNotification({ message, type })
   }
 
-  const handleInputChange = (field, value) => {
+  const handleInputChange = useCallback((field, value) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
     }))
-  }
+  }, [])
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = useCallback(async (e) => {
     e.preventDefault()
     
     // Validações básicas
@@ -95,7 +95,8 @@ const FormularioVaga = ({ onVagaCriada }) => {
           jornada_trabalho: '',
           beneficios: '',
           local_trabalho: '',
-          etapas_processo: ''
+          etapas_processo: '',
+          url: ''
         })
         
         // Atualizar cache
@@ -115,7 +116,7 @@ const FormularioVaga = ({ onVagaCriada }) => {
     } finally {
       setLoading(false)
     }
-  }
+  }, [formData, showNotification, refreshCache, onVagaCriada])
 
   const Notification = ({ message, type, onClose }) => (
     <div className={`fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 flex items-center max-w-md ${
