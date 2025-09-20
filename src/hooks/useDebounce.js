@@ -46,7 +46,7 @@ export function useDebouncedCallback(callback, delay = 500, deps = []) {
     timeoutRef.current = setTimeout(() => {
       callbackRef.current(...args)
     }, delay)
-  }, [delay, ...deps])
+  }, [delay, ...(deps || [])])
 
   // Cleanup no unmount
   useEffect(() => {
@@ -82,7 +82,7 @@ export function useThrottledCallback(callback, limit = 1000, deps = []) {
       inThrottle.current = true
       setTimeout(() => inThrottle.current = false, limit)
     }
-  }, [limit, ...deps])
+  }, [limit, ...(deps || [])])
 
   return throttledCallback
 }
@@ -148,5 +148,5 @@ export function useStableEffect(effect, deps = [], maxCalls = 10) {
         clearTimeout(timeoutRef.current)
       }
     }
-  }, deps)
+  }, deps || [])
 }

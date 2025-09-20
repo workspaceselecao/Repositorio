@@ -19,7 +19,7 @@ export default function NavigationDebug() {
       timestamp,
       history: navigationHistory
     })
-  }, [pathname])
+  }, [pathname, navigationHistory])
 
   // Desabilitado temporariamente para evitar logs excessivos
   return null

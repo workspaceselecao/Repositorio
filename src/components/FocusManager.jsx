@@ -146,7 +146,7 @@ export function useFocusEffect(effect, deps = []) {
 
     prevFocused.current = isFocused
     prevVisible.current = isVisible
-  }, [isFocused, isVisible, effect, ...deps])
+  }, [isFocused, isVisible, effect, ...(deps || [])])
 }
 
 // Componente para mostrar indicador de estado de foco (apenas em desenvolvimento)

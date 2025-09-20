@@ -120,7 +120,7 @@ export default function NovaVagaPage() {
                               Vaga criada com sucesso!
                             </h3>
                             <p className="text-green-700">
-                              A vaga "{vagaCriada.cargo}" foi adicionada ao sistema.
+                              A vaga &quot;{vagaCriada.cargo}&quot; foi adicionada ao sistema.
                             </p>
                           </div>
                         </div>
