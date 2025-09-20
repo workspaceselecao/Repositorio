@@ -77,13 +77,76 @@ const JobExtractor = ({ onVagaCriada }) => {
     try {
       const dataToSave = editing ? editedData : jobData
       
+      // Função para extrair cliente da URL
+      const extractClienteFromUrl = (url) => {
+        try {
+          const urlObj = new URL(url)
+          const hostname = urlObj.hostname
+          const match = hostname.match(/([^.]+)\.gupy\.io/)
+          if (match) {
+            return match[1].charAt(0).toUpperCase() + match[1].slice(1)
+          }
+        } catch (e) {
+          console.error('Erro ao extrair cliente da URL:', e)
+        }
+        return 'Cliente não identificado'
+      }
+
+      // Função para extrair produto do título
+      const extractProdutoFromTitle = (titulo) => {
+        if (!titulo) return 'Produto não identificado'
+        
+        // Procurar por padrões comuns de produtos no título
+        const patterns = [
+          /\(([^)]+)\)/g, // Texto entre parênteses
+          /- ([^-]+)$/g, // Texto após último hífen
+          /Banco de ([^-]+)/gi, // Banco de [algo]
+          /([A-Z][a-z]+ [A-Z][a-z]+)/g // Duas palavras capitalizadas
+        ]
+        
+        for (const pattern of patterns) {
+          const match = titulo.match(pattern)
+          if (match && match[0]) {
+            return match[0].replace(/[()]/g, '').trim()
+          }
+        }
+        
+        return 'Produto não identificado'
+      }
+
+      // Função para determinar categoria baseada no título e descrição
+      const determineCategoria = (titulo, descricao) => {
+        const text = `${titulo} ${descricao}`.toLowerCase()
+        
+        if (text.includes('atendimento') || text.includes('suporte') || text.includes('relacionamento')) {
+          return 'Atendimento'
+        }
+        if (text.includes('vendas') || text.includes('comercial') || text.includes('vendedor')) {
+          return 'Vendas'
+        }
+        if (text.includes('tecnologia') || text.includes('ti') || text.includes('desenvolvedor') || text.includes('programador')) {
+          return 'Tecnologia'
+        }
+        if (text.includes('rh') || text.includes('recursos humanos') || text.includes('recrutamento')) {
+          return 'Recursos Humanos'
+        }
+        if (text.includes('financeiro') || text.includes('contábil') || text.includes('contador')) {
+          return 'Financeiro'
+        }
+        if (text.includes('marketing') || text.includes('comunicação')) {
+          return 'Marketing'
+        }
+        
+        return 'Outro'
+      }
+
       // Mapear dados extraídos para o formato da tabela vagas
       const vagaData = {
-        site: dataToSave.site || 'Gupy',
-        categoria: dataToSave.categoria || 'Tecnologia',
+        site: 'Gupy',
+        categoria: determineCategoria(dataToSave.titulo, dataToSave.descricao),
         cargo: dataToSave.titulo || 'Cargo não informado',
-        cliente: dataToSave.cliente || 'Cliente não informado',
-        produto: dataToSave.produto || 'Produto não informado',
+        cliente: extractClienteFromUrl(dataToSave.url),
+        produto: extractProdutoFromTitle(dataToSave.titulo),
         descricao_vaga: dataToSave.descricao || '',
         responsabilidades_atribuicoes: dataToSave.responsabilidades || '',
         requisitos_qualificacoes: dataToSave.requisitos || '',
@@ -315,10 +378,10 @@ const JobExtractor = ({ onVagaCriada }) => {
             {/* Coluna da Esquerda - Informações Básicas */}
             <div className="space-y-4">
               <FieldDisplay label="Site" field="site" icon={Building2} placeholder="Gupy" />
-              <FieldDisplay label="Categoria" field="categoria" icon={Tag} placeholder="Tecnologia" />
+              <FieldDisplay label="Categoria" field="categoria" icon={Tag} placeholder="Categoria não identificada" />
               <FieldDisplay label="Cargo" field="cargo" icon={Briefcase} placeholder="Cargo não informado" />
-              <FieldDisplay label="Cliente" field="cliente" icon={Building2} placeholder="Cliente não informado" />
-              <FieldDisplay label="Produto" field="produto" icon={Package} placeholder="Produto não informado" />
+              <FieldDisplay label="Cliente" field="cliente" icon={Building2} placeholder="Cliente não identificado" />
+              <FieldDisplay label="Produto" field="produto" icon={Package} placeholder="Produto não identificado" />
               <FieldDisplay label="Título da Vaga" field="titulo" icon={FileText} placeholder="Título não informado" />
               <FieldDisplay label="Local de Trabalho" field="local_trabalho" icon={MapPin} placeholder="Local não informado" />
               <FieldDisplay label="Salário" field="salario" icon={DollarSign} placeholder="A combinar" />
