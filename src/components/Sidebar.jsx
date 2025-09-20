@@ -75,11 +75,9 @@ export default function Sidebar({ children }) {
   const handleNavigation = (href) => {
     const now = Date.now()
     if (now - lastClickTime < 200) {
-      console.log('Navigation debounced, ignoring click')
       return
     }
     setLastClickTime(now)
-    console.log('Sidebar navigation attempt:', href)
     navigate(href)
   }
 

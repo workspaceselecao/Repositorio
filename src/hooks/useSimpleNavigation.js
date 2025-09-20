@@ -13,12 +13,10 @@ export function useSimpleNavigation() {
     
     // Se for a mesma rota e passou menos de 200ms, ignorar
     if (lastNavigation.current.path === path && timeSinceLastNav < 200) {
-      console.log('Navigation blocked - same route too soon:', path)
       return
     }
 
     lastNavigation.current = { path, timestamp: now }
-    console.log('Simple navigation to:', path)
     
     try {
       router.push(path, options)
@@ -28,7 +26,6 @@ export function useSimpleNavigation() {
   }, [router])
 
   const replace = useCallback((path, options = {}) => {
-    console.log('Simple replace to:', path)
     try {
       router.replace(path, options)
     } catch (error) {

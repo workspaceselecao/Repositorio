@@ -149,25 +149,7 @@ export function useFocusEffect(effect, deps = []) {
   }, [isFocused, isVisible, effect, ...(deps || [])])
 }
 
-// Componente para mostrar indicador de estado de foco (apenas em desenvolvimento)
+// Componente desabilitado para evitar loops infinitos
 export function FocusIndicator() {
-  const { isFocused, isVisible, getTimeSinceLastFocus, getTimeSinceLastVisibility } = useFocus()
-
-  if (process.env.NODE_ENV !== 'development') {
-    return null
-  }
-
-  const timeSinceFocus = Math.round(getTimeSinceLastFocus() / 1000)
-  const timeSinceVisibility = Math.round(getTimeSinceLastVisibility() / 1000)
-
-  return (
-    <div className="fixed top-4 left-4 bg-black/80 text-white text-xs p-2 rounded-lg font-mono z-50">
-      <div className={`${isFocused ? 'text-green-400' : 'text-red-400'}`}>
-        Focus: {isFocused ? 'ON' : 'OFF'} ({timeSinceFocus}s)
-      </div>
-      <div className={`${isVisible ? 'text-green-400' : 'text-red-400'}`}>
-        Visible: {isVisible ? 'ON' : 'OFF'} ({timeSinceVisibility}s)
-      </div>
-    </div>
-  )
+  return null
 }

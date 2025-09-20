@@ -18,7 +18,6 @@ export function useNavigation() {
     
     // Se for a mesma rota e passou menos de 500ms, ignorar
     if (lastNavigation.current.path === path && timeSinceLastNav < 500) {
-      console.log('Navigation blocked - same route too soon')
       return
     }
 
@@ -29,20 +28,17 @@ export function useNavigation() {
 
     // Verificar se há muitas navegações em pouco tempo (mais permissivo)
     if (navigationCount.current > 10) {
-      console.warn('⚠️ Muitas navegações detectadas, possível loop infinito')
       return
     }
 
     navigationCount.current += 1
     lastNavigation.current = { path, timestamp: now }
 
-    console.log('Navigating to:', path)
     router.push(path, options)
   }, 100)
 
   const navigate = useCallback((path, options = {}) => {
     if (isNavigating.current) {
-      console.log('Navigation already in progress, ignoring:', path)
       return
     }
 
