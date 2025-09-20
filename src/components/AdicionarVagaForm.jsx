@@ -194,7 +194,7 @@ const AdicionarVagaForm = ({ onSuccess }) => {
                       Extração Automática
                     </h3>
                     <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
-                      Cole a URL da vaga e clique em "Extrair Dados" para preencher automaticamente o formulário
+                      Cole a URL da vaga e clique em &quot;Extrair Dados&quot; para preencher automaticamente o formulário
                     </p>
                   </div>
                 </div>
