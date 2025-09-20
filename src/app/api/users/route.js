@@ -145,9 +145,9 @@ export async function POST(request) {
         id: authData.user.id,
         email,
         name,
-        role
+        role,
+        created_at: new Date().toISOString()
       }])
-      .select()
 
     if (profileError) {
       console.error('❌ Erro ao criar perfil do usuário:', profileError)
@@ -172,7 +172,12 @@ export async function POST(request) {
 
     return Response.json({ 
       success: true,
-      user: profileData?.[0] || profileData,
+      user: {
+        id: authData.user.id,
+        email,
+        name,
+        role
+      },
       message: `Usuário ${name} criado com sucesso!`
     }, { status: 201 })
 
