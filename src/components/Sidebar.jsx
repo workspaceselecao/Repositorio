@@ -19,11 +19,13 @@ import {
   X,
   Building2,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Plus
 } from 'lucide-react'
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: Home, description: 'Visão geral do sistema' },
+  { name: 'Nova Vaga', href: '/vagas/nova', icon: Plus, description: 'Adicionar nova vaga' },
   { name: 'Lista de Clientes', href: '/vagas', icon: Users, description: 'Gerenciar clientes' },
   { name: 'Comparativo', href: '/comparativo', icon: BarChart3, description: 'Análise comparativa' },
   { name: 'Configurações', href: '/configuracoes', icon: Settings, description: 'Configurações do sistema', adminOnly: true },
