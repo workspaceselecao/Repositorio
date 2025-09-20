@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useAuth } from '../contexts/AuthContext'
-import { useNavigation } from '../hooks/useNavigation'
+import { useSimpleNavigation } from '../hooks/useSimpleNavigation'
 import { Button } from './ui/button'
 import { Card } from './ui/card'
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar'
@@ -35,7 +35,7 @@ export default function Sidebar({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const { profile, signOut } = useAuth()
-  const { navigate } = useNavigation()
+  const { navigate } = useSimpleNavigation()
   const pathname = usePathname()
   const [lastClickTime, setLastClickTime] = useState(0)
 
@@ -74,11 +74,12 @@ export default function Sidebar({ children }) {
 
   const handleNavigation = (href) => {
     const now = Date.now()
-    if (now - lastClickTime < 500) {
+    if (now - lastClickTime < 200) {
       console.log('Navigation debounced, ignoring click')
       return
     }
     setLastClickTime(now)
+    console.log('Sidebar navigation attempt:', href)
     navigate(href)
   }
 

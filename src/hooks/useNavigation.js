@@ -16,18 +16,19 @@ export function useNavigation() {
     const now = Date.now()
     const timeSinceLastNav = now - lastNavigation.current.timestamp
     
-    // Se for a mesma rota e passou menos de 1000ms, ignorar
-    if (lastNavigation.current.path === path && timeSinceLastNav < 1000) {
+    // Se for a mesma rota e passou menos de 500ms, ignorar
+    if (lastNavigation.current.path === path && timeSinceLastNav < 500) {
+      console.log('Navigation blocked - same route too soon')
       return
     }
 
-    // Reset contador se passou mais de 10 segundos
-    if (timeSinceLastNav > 10000) {
+    // Reset contador se passou mais de 5 segundos
+    if (timeSinceLastNav > 5000) {
       navigationCount.current = 0
     }
 
-    // Verificar se há muitas navegações em pouco tempo
-    if (navigationCount.current > 5) {
+    // Verificar se há muitas navegações em pouco tempo (mais permissivo)
+    if (navigationCount.current > 10) {
       console.warn('⚠️ Muitas navegações detectadas, possível loop infinito')
       return
     }
@@ -35,11 +36,13 @@ export function useNavigation() {
     navigationCount.current += 1
     lastNavigation.current = { path, timestamp: now }
 
+    console.log('Navigating to:', path)
     router.push(path, options)
-  }, 200)
+  }, 100)
 
   const navigate = useCallback((path, options = {}) => {
     if (isNavigating.current) {
+      console.log('Navigation already in progress, ignoring:', path)
       return
     }
 
@@ -50,10 +53,10 @@ export function useNavigation() {
       clearTimeout(navigationTimeout.current)
     }
 
-    // Timeout para resetar o estado de navegação
+    // Timeout para resetar o estado de navegação (mais rápido)
     navigationTimeout.current = setTimeout(() => {
       isNavigating.current = false
-    }, 2000)
+    }, 1000)
 
     debouncedNavigate(path, options)
   }, [debouncedNavigate])
@@ -99,10 +102,21 @@ export function useNavigation() {
     }
   }, [])
 
+  // Função de debug para verificar estado
+  const debugNavigation = useCallback(() => {
+    console.log('Navigation Debug:', {
+      isNavigating: isNavigating.current,
+      navigationCount: navigationCount.current,
+      lastNavigation: lastNavigation.current,
+      hasTimeout: !!navigationTimeout.current
+    })
+  }, [])
+
   return {
     navigate,
     replace,
     resetNavigation,
+    debugNavigation,
     isNavigating: isNavigating.current
   }
 }
